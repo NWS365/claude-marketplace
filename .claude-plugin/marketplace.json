@@ -1,0 +1,41 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "legal-plugins",
+  "description": "Marketplace of legal reasoning and workflow plugins for Claude Code",
+  "owner": {
+    "name": "Nicholas Wentworth-Shaw",
+    "email": "nick.shaw@smartr365.com"
+  },
+  "plugins": [
+    {
+      "name": "legal-debate",
+      "description": "Structured multi-agent debate for legal problem-solving (England & Wales / Commonwealth silk systems). King's Counsel argue a proposition for and against, or develop competing strategies, challenge each other like opposing counsel, and produce a weighted comparison with a reasoned verdict.",
+      "author": {
+        "name": "Nicholas Wentworth-Shaw",
+        "email": "nick.shaw@smartr365.com"
+      },
+      "category": "legal",
+      "source": "./plugins/legal-debate"
+    },
+    {
+      "name": "uk-legal",
+      "description": "UK legal research MCP server (TypeScript) — case law, legislation, Parliament/Hansard, bills, votes, committees, OSCOLA citations, and HMRC guidance. Returns primary sources with citation metadata. Compliance-controlled reimplementation.",
+      "author": {
+        "name": "Nicholas Wentworth-Shaw",
+        "email": "nick.shaw@smartr365.com"
+      },
+      "category": "legal",
+      "source": "./plugins/uk-legal"
+    },
+    {
+      "name": "legal-research",
+      "description": "Decision-tree guidance for grounding UK legal work in primary sources via the uk-legal MCP tools, with a mandatory citation-verification protocol that prevents fabricated authorities. Companion to the uk-legal plugin.",
+      "author": {
+        "name": "Nicholas Wentworth-Shaw",
+        "email": "nick.shaw@smartr365.com"
+      },
+      "category": "legal",
+      "source": "./plugins/legal-research"
+    }
+  ]
+}

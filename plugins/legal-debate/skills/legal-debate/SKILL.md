@@ -1,0 +1,240 @@
+---
+name: Legal Debate
+description: This skill should be used when the user asks to "debate this legal question", "evaluate legal strategies", "argue both sides", "compare legal positions", "what's the strongest argument", "moot this", "stress test this argument", "assess litigation risk", "which clause approach is safer", "appeal this outcome", "how do I win this position", or needs multiple perspectives on a legal problem. Spawns a dynamic team of agents that argue competing legal positions, then debate to find the strongest approach, with optional appeal and case-strengthening stages.
+version: 0.2.0
+---
+
+# Legal Debate Skill
+
+> **ANNOUNCE ON INVOCATION:** When this skill is loaded, immediately tell the user: "Using legal-debate skill — analysing the question to prepare an agent debate."
+
+> **NOT LEGAL ADVICE:** This skill produces structured argument analysis for informational and preparatory purposes only. It is not legal advice and does not create a lawyer–client relationship. Outputs must be reviewed by a qualified, jurisdictionally-licensed attorney before being relied upon. Surface this disclaimer in the final output.
+
+Facilitate structured multi-agent debates for legal problem-solving. A team of 2-5 agents independently develop competing legal positions or strategies, then challenge each other's reasoning through adversarial debate rounds — like opposing counsel or a moot bench — until consensus emerges or a judge synthesis decides.
+
+## Scope
+
+This skill targets **legal reasoning problems** — litigation and dispute strategy, contract drafting and negotiation approaches, statutory and regulatory interpretation, risk and enforceability assessment, and choice-of-forum or choice-of-law trade-offs. It reasons about legal argument structure and strategy; it does **not** replace a qualified solicitor or barrister, does not guarantee jurisdictional accuracy, and is not suited to giving definitive advice on a live matter.
+
+**Jurisdictional scope:** this skill is tailored to **England & Wales and Commonwealth silk systems** (jurisdictions that appoint King's Counsel / Senior Counsel). Its advocate personas, terminology, and authority conventions assume that setting. If a question is governed by a non-silk jurisdiction's law (e.g. a US state), flag that it falls outside the skill's tailoring before proceeding.
+
+## Invariants
+
+- **ALWAYS** choose the **debate shape** before agent count — *proposition* (agents argue a single yes/no question for and against) or *strategy-selection* (agents argue distinct competing approaches)
+- **ALWAYS** assess problem complexity before choosing agent count
+- **NEVER** spawn more than 5 agents — diminishing returns beyond this
+- **ALWAYS** assign each agent a distinct legal position or strategy to prevent convergence before debate begins
+- **ALWAYS**, in *proposition* shape, split agents into opposing sides (for and against) so at least one advocates each way
+- **ALWAYS** cast the advocate agents as **King's Counsel (KC)** — or **Senior Counsel (SC)** in Commonwealth jurisdictions that use that title — since this skill is scoped to England & Wales and Commonwealth silk systems
+- **ALWAYS** flag, before spawning, if the governing law is a non-silk jurisdiction — the question falls outside this skill's tailoring
+- **NEVER** let agents see each other's initial research — independence is critical for genuinely adversarial argument
+- **ALWAYS** ground every authority an advocate advances in the **uk-legal MCP tools** (case law, legislation, Hansard) rather than model memory, and **verify every citation** via `citations_resolve` before it enters the output — see *Authority & verification* below. Flag where jurisdiction is assumed or unknown
+- **ALWAYS** include a consensus check after debate rounds
+- **ALWAYS**, *even when consensus is reached*, offer the human a formal judge's ruling anyway — a consensus among advocates is not an independent determination on the law (see Phase 4)
+- **ALWAYS** produce output as a weighted comparison table with a brief verdict (see `references/output-format.md`)
+- **ALWAYS** fall back to a judge synthesis if consensus is not reached after 2 debate rounds
+- **ALWAYS**, once the output has been produced, offer the human an **appeals process** before treating the matter as closed (see Phase 6)
+- **ALWAYS**, after the appeal has run or been declined, offer the human a **case-strengthening review** that produces a package on how best to win *their* position (see Phase 7)
+- **ALWAYS** treat the appeal and the case-strengthening review as *opt-in* — offer them, never impose them
+- **ALWAYS** append the "NOT LEGAL ADVICE" disclaimer to every output, including the appeal ruling and the case-strengthening package
+
+## Authority & verification (uk-legal MCP)
+
+This skill is a companion to the **`uk-legal`** plugin (MCP server key `uk-legal`) and the **`legal-research`** skill. Advocates must ground their submissions in **primary sources via those tools, not model memory** — include this directive in every agent prompt (Phase 2), and apply it when synthesising the verdict.
+
+Map debate work → tools:
+- **Case authority** for a position → `case_law_search` → `judgment_get_index` / `judgment_get_paragraph` (quote the paragraph, not a paraphrase). What a leading case relied on → `citations_network`.
+- **Statutory / SI authority** → `legislation_search` → `legislation_get_section`; **check `extent` and `in_force` / `version_date`** before an advocate relies on a provision — a repealed or not-yet-in-force section sinks the argument.
+- **Parliamentary material** (purposive construction, *Pepper v Hart*) → `parliament_search_hansard` → `parliament_lookup_by_column`.
+- **Every citation** an advocate advances, in any round, MUST pass the verification protocol before it appears in the comparison table, the verdict, or an agent's cited authority: `citations_parse` → `citations_resolve` (a `confidence` of `0.0` means the document does not exist — do not cite it) → `citations_format_oscola` (which refuses to format a fabricated citation). This is the concrete mechanism behind the "no fabricated citations" invariant. If verification fails, the advocate drops or re-sources the point — never manufacture a citation.
+
+If the `uk-legal` tools are unavailable, tell the user to install the `uk-legal` plugin; the debate can still run on reasoning alone, but flag that authorities are unverified.
+
+## Workflow
+
+### Phase 1: Problem Analysis
+
+Analyse the user's problem statement to determine:
+
+1. **Problem classification** — litigation/dispute strategy, contract drafting/negotiation, statutory/regulatory interpretation, risk & enforceability assessment, or choice-of-forum/choice-of-law
+2. **Jurisdiction & governing law** — identify the applicable jurisdiction and body of law. If not stated, ask before proceeding — legal conclusions rarely transfer across jurisdictions. The skill assumes an England & Wales / Commonwealth silk jurisdiction, so the advocate persona is **King's Counsel** (or **Senior Counsel** where that title is used); if the governing law is a non-silk jurisdiction, flag that it falls outside the skill's tailoring.
+3. **Debate shape** — classify the question:
+   - **Proposition** — a single yes/no legal question (enforceable? liable? time-barred? admissible?). Agents are split into opposing sides and argue the *same* proposition **for and against**, as adversaries.
+   - **Strategy-selection** — a "which approach?" question with three or more genuinely distinct options (e.g. litigate vs mediate vs arbitrate). Agents each develop a *distinct* strategy and compare (multi-position).
+4. **Complexity assessment** — determines agent count, given the shape:
+   - **Proposition, simple** (2 agents): one KC/advocate for, one against.
+   - **Proposition, contested** (4 agents): two-a-side — a leader and junior per side, or two independent advocates per side developing the strongest and second-strongest lines.
+   - **Strategy-selection, moderate** (3 agents): three viable strategies with non-obvious trade-offs.
+   - **Strategy-selection, complex** (4-5 agents): broad option space, multiple causes of action, or cross-jurisdictional concerns.
+5. **Positions / strategies** — identify the concrete legal angle each agent develops. In *proposition* shape these are the for and against cases on one question; in *strategy-selection* each must be a genuinely different theory or strategy, not a rephrasing.
+
+Confirm the plan with the user before spawning:
+
+> **Proposition:** "Analysing as a [classification] question under [jurisdiction/governing law] — a proposition, so I'll instruct [N] agents as opposing [King's Counsel / Senior Counsel]: [M] arguing FOR '[proposition]' and [M] AGAINST. Proceed?"
+>
+> **Strategy-selection:** "Analysing as a [classification] question under [jurisdiction/governing law] — a strategy choice, so I'll spawn [N] agents to develop and compare: [strategy 1], [strategy 2], ... Proceed?"
+
+### Phase 2: Agent Team Creation
+
+Use `TeamCreate` to spawn the agent team. Each agent receives:
+
+- Its **assigned side** (for / against) or **distinct strategy**, per the debate shape
+- Its **advocate persona** — **King's Counsel (KC)**, or **Senior Counsel (SC)** where that title is used (see Phase 1). Instruct the agent to conduct itself as leading counsel: precise, authority-led, and candid about weaknesses in its own case.
+- The **original problem statement**, jurisdiction, and governing law for context
+- Instructions to **build the strongest possible case** for its side/strategy
+- A directive to **anticipate opposing counsel's arguments** and pre-empt them
+- A directive to **ground every authority in the `uk-legal` MCP tools** (`case_law_search`/`judgment_get_paragraph`, `legislation_get_section` with `extent`/`in_force`, `parliament_search_hansard`) and to **verify each citation** through `citations_parse` → `citations_resolve` → `citations_format_oscola` before advancing it — see *Authority & verification*
+
+**Proposition shape** — opposing advocates on one question:
+
+```
+TeamCreate:
+  name: "legal-debate-[matter-slug]"
+  agents:
+    - name: "kc-for"          # senior-counsel-for in a non-silk jurisdiction
+      prompt: |
+        You are [King's Counsel / Senior Counsel] instructed to argue FOR the proposition:
+        "[proposition]". Jurisdiction / governing law: [jurisdiction].
+
+        Conduct yourself as a senior advocate: lead with your strongest authority, be precise,
+        and be candid about the weaknesses in your own case rather than hiding them.
+        Structure your submission as:
+        1. Position statement (concrete legal conclusion, not abstract)
+        2. Supporting authority (cite statutes, cases, regulations, or contract text)
+        3. Application to the facts
+        4. Known weaknesses, adverse authority, and how you distinguish or mitigate them
+        5. Anticipated arguments from opposing counsel and your rebuttals
+
+        Cite specific authority. Where you assume a fact or jurisdictional point, flag it explicitly.
+        Do not fabricate citations — if you are unsure a case or section exists, say so.
+    - name: "kc-against"      # mirror prompt, arguing AGAINST the same proposition
+      prompt: ...
+    # For a contested (4-agent) proposition: kc-for-lead, kc-for-junior, kc-against-lead, kc-against-junior
+```
+
+**Strategy-selection shape** — each agent develops a distinct approach (multi-position):
+
+```
+TeamCreate:
+  name: "legal-debate-[matter-slug]"
+  agents:
+    - name: "counsel-strategy-1"
+      prompt: |
+        You are [King's Counsel / Senior Counsel] developing [strategy 1] as the approach to: [problem statement].
+        Jurisdiction / governing law: [jurisdiction].
+        Build the strongest case for THIS strategy using the same 5-part structure as above,
+        and identify the conditions under which a competing strategy would be preferable.
+    - name: "counsel-strategy-2"
+      prompt: ...
+    # ... up to 5 agents
+```
+
+### Phase 3: Debate Rounds
+
+Once all agents have completed their initial development, the orchestrator (main session) acts as the debate facilitator — think presiding judge or moot bench. Facilitate debate:
+
+**Round 1 — Challenge Phase:**
+Send each agent a summary of all other agents' positions via `SendMessage`. Instruct each to:
+- Identify the **weakest points** in competing positions (missing elements, distinguishable authority, factual gaps)
+- Defend their own position against anticipated challenges
+- Concede points where a competing position is genuinely stronger on the law
+
+**Round 2 — Rebuttal Phase:**
+Share Round 1 challenges back to each agent. Instruct each to:
+- Respond to specific critiques of their position
+- Update their position if a challenge revealed a genuine flaw or controlling adverse authority
+- State which competing position they consider second-strongest and why
+
+See `references/debate-protocol.md` for detailed facilitation guidance, including how to handle unproductive arguments, citation hygiene, and maintaining focus. If the problem is under-specified (missing facts or jurisdiction) and agents cannot argue concretely, pause and ask the user for clarification before proceeding.
+
+### Phase 4: Consensus Resolution
+
+After Round 2, assess consensus:
+
+**Consensus reached** — Agents converge on the same position or clearly acknowledge one as strongest:
+- Synthesise the winning position with improvements surfaced during debate
+- Note any caveats, adverse authority, or factual dependencies that should inform reliance
+- **Offer a judge's ruling anyway.** A consensus *among advocates* is not an independent determination on the law — the advocates may have converged on a shared but wrong reading, or missed a dispositive authority. Ask the human via `AskUserQuestion`:
+  > "The advocates reached consensus on **[position]**. A consensus among counsel is not a ruling. Would you like a formal judge's ruling regardless — an independent, reasoned determination that weighs authority rather than counting supporters?"
+  - **Yes** → run the judge synthesis below as if there were no consensus, then **state explicitly where the judge's independent ruling agrees with, qualifies, or diverges from the advocates' consensus**. Divergence is a signal, not an error — surface it prominently.
+  - **No** → proceed to Phase 5 with the consensus synthesis.
+
+**No consensus (fallback)** — Agents remain divided or the margin is thin:
+- Act as a **judge agent**: review all arguments objectively
+- Weight arguments by strength of authority and fit to the facts, not by count of supporters
+- Produce a verdict with explicit reasoning for why the winning position edges out the alternatives
+
+### Phase 5: Output
+
+Produce the final output in two parts:
+
+1. **Weighted comparison table** — score each position against relevant criteria (see `references/output-format.md` for template and criteria selection guidance)
+2. **Brief verdict** — 2-3 sentences: strongest position, primary rationale, and key caveat
+
+Append the **NOT LEGAL ADVICE** disclaimer. Present to the user for final decision. The debate informs — a qualified attorney and the user decide.
+
+Then proceed to **Phase 6** — do not treat the matter as closed until the appeal and case-strengthening offers have been made.
+
+### Phase 6: Appeals (opt-in)
+
+Once the Phase 5 output exists, **offer the human an appeals process** before closing. An appeal is a structured re-examination of the ruling on defined grounds — not a re-run of the debate. Ask via `AskUserQuestion`:
+
+> "Would you like to appeal this outcome? An appeal appoints counsel to challenge the ruling on specific grounds (error of law, misapplied test, overlooked or misweighted authority, a strong line never argued, or new facts/authority), with the bench applying an appellate standard of review."
+
+- **Declined** → skip to Phase 7.
+- **Accepted** → run the appeal per `references/appeals-and-strengthening.md`:
+  1. **Grounds of appeal** — appoint an *appellant KC/SC* to draft concrete grounds against the ruling (each ground tied to a specific error and authority, not general disagreement).
+  2. **Respondent's answer** — appoint a *respondent KC/SC* to defend the ruling ground-by-ground.
+  3. **Appellate determination** — act as the appellate bench (a single appellate judge, or a 3-member panel for complex matters). Apply the standard of review: **de novo on questions of law; deference to findings that turned on facts/authority actually argued below.** Every authority relied on in the appeal passes the same *Authority & verification* protocol.
+  4. **Disposition** — **appeal allowed** (ruling varied or reversed — state the revised position and what changed) or **appeal dismissed** (ruling affirmed, with reasons). Append the disclaimer.
+
+An appeal may only be run once by default; a further appeal requires the human to identify a genuinely new ground.
+
+### Phase 7: Case-strengthening review (opt-in)
+
+After the appeal has run **or been declined**, offer the human a partisan review aimed at *winning*, not adjudicating. Ask via `AskUserQuestion`:
+
+> "Would you like a case-strengthening review? Unlike the neutral ruling, this takes **one** position — the one you want to advance — and produces a package on how best to win it: the strongest lines, the authorities to marshal, the evidence to gather, and the counter-arguments to prepare for."
+
+- **Declined** → close: brief summary + disclaimer.
+- **Accepted** → first confirm **which position is theirs to advance** (it may be the winner, the appeal outcome, or the position they are instructed on — it need not be the position that prevailed). Then produce the **winning package** per `references/appeals-and-strengthening.md`:
+  1. **Strongest lines, ranked** — each anchored to verified, OSCOLA-formatted authority with the key paragraph to quote.
+  2. **Authorities to marshal** — the cases, sections, and Hansard material to cite, all verified via `citations_resolve`; flag any that are only persuasive or distinguishable.
+  3. **Evidence & factual gaps** — what facts/documents make each line land, and what is missing.
+  4. **Anticipated opposition & prepared rebuttals** — the strongest counter-arguments (drawn from the losing/other side of the debate) and how to meet them.
+  5. **Tactics** — dispositive/threshold points first, forum and procedural considerations, and settlement leverage.
+  6. **Risk register** — what could sink the position and the mitigation for each.
+
+This package is *advocacy preparation*, not advice — append the **NOT LEGAL ADVICE** disclaimer and reiterate that a qualified, jurisdictionally-licensed lawyer must settle anything relied on.
+
+## Agent Communication Pattern
+
+```
+Phase 2: TeamCreate (parallel, independent development)
+    counsel-1 ──develop──> position-1
+    counsel-2 ──develop──> position-2
+    counsel-N ──develop──> position-N
+
+Phase 3, Round 1: SendMessage (challenge)
+    facilitator ──all positions──> each counsel
+    each counsel ──challenges──> facilitator
+
+Phase 3, Round 2: SendMessage (rebuttal)
+    facilitator ──challenges──> each counsel
+    each counsel ──rebuttals──> facilitator
+
+Phase 4: Consensus or judge synthesis (+ offer judge's ruling even on consensus)
+Phase 5: Comparison table + verdict + disclaimer
+Phase 6: Offer appeal → grounds → respondent → appellate ruling (opt-in)
+Phase 7: Offer case-strengthening → winning package for the user's position (opt-in)
+```
+
+## Criteria Selection
+
+Choose 3-5 criteria relevant to the specific question. Weight by importance (x1 default, x2 for critical factors). See `references/output-format.md` for detailed criteria selection guidance per problem type (litigation strategy, contract, statutory interpretation, risk assessment).
+
+## Reference Files
+
+- **`references/debate-protocol.md`** — Detailed debate facilitation rules, round structure, citation hygiene, handling unproductive arguments, and edge cases
+- **`references/output-format.md`** — Comparison table template, criteria selection guidance, verdict format, and disclaimer text
+- **`references/appeals-and-strengthening.md`** — Mechanics for Phase 6 (grounds of appeal, standard of review, appellate panel, disposition) and Phase 7 (winning-package structure, partisan-vs-neutral framing, authority marshalling)

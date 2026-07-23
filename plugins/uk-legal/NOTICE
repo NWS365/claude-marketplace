@@ -1,0 +1,18 @@
+uk-legal (TypeScript)
+=====================
+
+Copyright © 2026 Smartr365. All rights reserved.
+
+This software is PROPRIETARY and CONFIDENTIAL. No licence to use, copy, modify,
+distribute, or create derivative works is granted except as separately agreed
+in writing with Smartr365.
+
+It is an independent TypeScript implementation built on the Model Context
+Protocol TypeScript SDK (@modelcontextprotocol/sdk). It targets publicly
+available UK legal data sources (The National Archives Find Case Law,
+legislation.gov.uk, the UK Parliament APIs, and GOV.UK/HMRC); those sources and
+their data are the property of their respective owners and are used under their
+own terms.
+
+Third-party open-source packages used at runtime (declared in package.json)
+remain under their own licences, held in each package's distribution.

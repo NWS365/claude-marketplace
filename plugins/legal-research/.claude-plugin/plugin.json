@@ -1,0 +1,20 @@
+{
+  "name": "legal-research",
+  "version": "0.1.0",
+  "description": "Decision-tree guidance for grounding UK legal work in primary sources via the uk-legal MCP tools — which tool to call for which question, and a mandatory citation-verification protocol that prevents fabricated citations.",
+  "author": {
+    "name": "Nicholas Wentworth-Shaw",
+    "email": "nick.shaw@smartr365.com"
+  },
+  "keywords": [
+    "legal",
+    "research",
+    "uk-law",
+    "citations",
+    "oscola",
+    "case-law",
+    "legislation",
+    "hansard",
+    "verification"
+  ]
+}

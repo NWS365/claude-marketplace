@@ -1,0 +1,40 @@
+{
+  "name": "uk-legal-ts",
+  "version": "0.1.0",
+  "description": "UK legal research MCP server (TypeScript) — case law, legislation, Parliament/Hansard, bills, votes, committees, OSCOLA citations, HMRC. Compliance-controlled; returns primary sources with citation metadata.",
+  "type": "module",
+  "private": true,
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=20"
+  },
+  "bin": {
+    "uk-legal": "dist/server.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "dev": "tsx src/server.ts",
+    "typecheck": "tsc --noEmit",
+    "verify": "node scripts/verify-parity.mjs",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "@xmldom/xmldom": "^0.9.10",
+    "impit": "^0.14.3",
+    "xpath": "^0.0.34",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.1",
+    "@vitest/coverage-v8": "^4.1.10",
+    "tsx": "^4.23.1",
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.10"
+  }
+}

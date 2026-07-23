@@ -1,0 +1,21 @@
+{
+  "name": "uk-legal",
+  "version": "0.1.0",
+  "description": "UK legal research MCP server (TypeScript) — UK case law, legislation, Parliament/Hansard, bills, votes, committees, OSCOLA citations, and HMRC guidance. Compliance-controlled; returns primary sources with citation metadata.",
+  "author": {
+    "name": "Nicholas Wentworth-Shaw",
+    "email": "nick.shaw@smartr365.com"
+  },
+  "keywords": [
+    "mcp",
+    "legal",
+    "uk-law",
+    "case-law",
+    "legislation",
+    "hansard",
+    "parliament",
+    "hmrc",
+    "oscola",
+    "citations"
+  ]
+}
