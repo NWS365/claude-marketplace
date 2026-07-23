@@ -29,7 +29,7 @@ describe("classifyError", () => {
     expect(classifyError(httpErr(403)).status).toBe("auth_required");
     expect(classifyError(httpErr(429)).status).toBe("upstream_unavailable");
     expect(classifyError(httpErr(437)).status).toBe("upstream_unavailable");
-    expect(classifyError(httpErr(422)).status).toBe("upstream_validation");
+    expect(classifyError(httpErr(422)).status).toBe("upstream_bad_request");
     expect(classifyError(httpErr(500)).status).toBe("upstream_unavailable");
   });
 
@@ -47,16 +47,16 @@ describe("classifyError", () => {
     expect(classifyError(new Error("ENOTFOUND host")).status).toBe("upstream_unavailable");
   });
 
-  it("falls back to unknown_error and truncates the detail to 200 chars", () => {
+  it("falls back to error_unclassified and truncates the detail to 200 chars", () => {
     const long = "z".repeat(500);
     const { status, detail } = classifyError(new Error(long));
-    expect(status).toBe("unknown_error");
+    expect(status).toBe("error_unclassified");
     expect(detail.length).toBe(200);
   });
 
   it("handles a non-Error thrown value", () => {
     const { status, detail } = classifyError("plain string");
-    expect(status).toBe("unknown_error");
+    expect(status).toBe("error_unclassified");
     expect(detail).toContain("plain string");
   });
 });
@@ -70,9 +70,9 @@ describe("plain envelopes", () => {
   });
   it("notFoundEnvelope / emptyEnvelope / wrapResponse shapes", () => {
     expect(notFoundEnvelope("gone", { id: 1 })).toEqual({ status: "not_found", detail: "gone", id: 1 });
-    expect(emptyEnvelope()).toEqual({ status: "empty", data: [], detail: "no results matched the query" });
+    expect(emptyEnvelope()).toEqual({ status: "no_results", data: [], detail: "the query ran but matched no records" });
     expect(emptyEnvelope("custom", { q: "x" })).toEqual({
-      status: "empty",
+      status: "no_results",
       data: [],
       detail: "custom",
       q: "x",

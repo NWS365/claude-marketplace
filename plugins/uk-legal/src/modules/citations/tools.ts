@@ -1,11 +1,11 @@
 /**
- * OSCOLA citation parsing and resolution tools for the citations module.
+ * OSCOLA citation tools: parse, resolve, network, and format.
  *
- * Self-contained, with no reliance on an external JSON API — everything runs on
- * regex plus optional MCP sampling. Only two of the tools reach the network:
- * citations_resolve fires a HEAD existence probe at TNA and citations_network
- * downloads a data.xml document. citations_parse and citations_format_oscola are
- * pure transforms that never make a request.
+ * The module carries no external JSON API — parsing and formatting are pure
+ * regex/string transforms that touch no network. Only two calls go out:
+ * citations_resolve fires a HEAD existence probe at TNA, and citations_network
+ * downloads a judgment's data.xml. citations_parse and citations_format_oscola
+ * never make a request.
  */
 import { z } from "zod";
 import { performance } from "node:perf_hooks";
@@ -195,70 +195,61 @@ const formatInputSchema = {
 
 // --- Tool descriptions ---
 
-const PARSE_DESCRIPTION = `REACH FOR THIS TOOL when you hold a block of free text (a memo, an email, a clause) and need every OSCOLA-style citation inside it pulled out and categorised.
+const PARSE_DESCRIPTION = `Extracts every OSCOLA-style citation from a block of free text (a memo, an email, a clause) and classifies each one.
 
-Detects: neutral citations ([2024] UKSC 12), law reports ([2024] 1 WLR
-100), legislation sections (s.47 Companies Act 2006), SIs (SI 2018/1234),
-retained EU law (Regulation (EU) 2016/679).
+Recognised forms: neutral citations ([2024] UKSC 12), law reports ([2024] 1
+WLR 100), legislation sections (s.47 Companies Act 2006), statutory
+instruments (SI 2018/1234), and retained EU law (Regulation (EU) 2016/679).
 
-By default the work is done entirely with regex. You MAY optionally
-disambiguate uncertain citations (say a bare [2024] EWHC with no division)
-by passing disambiguate=True, which hands the division decision to the
-CONNECTED CLIENT's own model — not this server — over MCP sampling; that
-stays off unless you enable it. Where possible, citations map to TNA /
-legislation.gov.uk URLs.
+Extraction is regex-only unless disambiguate is set, in which case a bare
+court code with no division (for example [2024] EWHC) is referred to the
+connected client's own model over MCP sampling — never to this server — to
+infer the division; that path stays off unless you opt in. Recognised
+citations are mapped to TNA / legislation.gov.uk URLs where one can be built.
 
-ONCE you have the results, run each citation through citations_resolve to
-confirm it truly points at a live document before quoting or formatting it —
-this tool matches the SHAPE of a citation but does not guarantee the
-document is real.`;
+This step recognises the shape of a citation only. Send each result through
+citations_resolve to confirm the document is real before quoting or
+formatting it.`;
 
-const RESOLVE_DESCRIPTION = `CALL THIS TOOL BEFORE you assemble an OSCOLA citation string out of fields you already hold, OR when you need to check that a citation really points at an existing document.
+const RESOLVE_DESCRIPTION = `Parses and resolves a single citation — a neutral citation, SI, legislation section, or retained EU law — returning the parsed fields plus a resolved_url.
 
-It parses and resolves a lone citation (neutral citation, SI, legislation
-section, retained EU law) and returns the parsed fields together with
-resolved_url. Neutral citations trigger a live TNA HEAD request — any
-non-200 response drops confidence to 0.0 (document absent). Never format
-or quote a citation whose confidence is 0.0.
+Neutral citations are checked live against TNA with a HEAD request: any
+non-200 response drops confidence to 0.0, meaning the document is absent. A
+citation at confidence 0.0 must never be formatted or quoted.
 
-Should the TNA HEAD request fail (a timeout or connection error), the tool
-raises ToolError carrying {"error_category": "transient", "is_retryable":
-true}. A single retry runs automatically — retry the call yourself or carry
-on without TNA verification.
+If that HEAD request fails on a timeout or connection error, the tool returns
+a structured error carrying {"error_category":"transient","is_retryable":true};
+one retry runs automatically, after which you can retry again or continue
+without TNA verification.
 
-Building a citation from "known" fields without resolving first is the most
-frequent path to fabrication. When this tool raises or comes back with no
-resolved_url, do NOT invent a citation — report the failure and ask the
-user for the source URL.
+Assembling a citation from fields you already hold, without resolving it
+first, is the commonest route to a fabricated reference. If this tool errors
+or returns no resolved_url, do not invent one — report the failure and ask
+the user for the source URL.
 
-The definitive route for resolving UK legal citations.`;
+Use this as the canonical resolver for UK legal citations.`;
 
-const NETWORK_DESCRIPTION = `TURN TO THIS TOOL when you have a judgment slug and want a map of everything it cites — the cases it relies on, the legislation it references, SIs, retained EU law.
+const NETWORK_DESCRIPTION = `Given a judgment slug, builds the map of everything that judgment cites — the cases it relies on, the legislation and SIs it references, and any retained EU law.
 
-It pulls the judgment XML from TNA and extracts every OSCOLA citation it
-contains, returning them bucketed by type, deduplicated and sorted.
-AFTERWARDS, run any single citation through citations_resolve to check
-that it resolves and to obtain its canonical URL.
+It fetches the judgment XML from TNA, extracts every OSCOLA citation, and
+returns them bucketed by type, deduplicated and sorted. Run any individual
+result through citations_resolve afterwards to confirm it resolves and to
+obtain its canonical URL.
 
-Handy for authority-network work (which sources did this judgment lean
-on?) and for mapping the legislative context a case sits within.`;
+Useful for authority-network questions (what did this judgment rely on?) and
+for placing a case in its legislative context.`;
 
-const FORMAT_DESCRIPTION = `RUN THIS TOOL AFTER citations_resolve to emit the properly formatted OSCOLA citation string.
+const FORMAT_DESCRIPTION = `Emits the formatted OSCOLA citation string from fields that citations_resolve has already produced. It applies OSCOLA 4th-edition rules per citation type and makes no network call.
 
-Feed the parsed fields that citations_resolve produced straight into this
-tool. It formats each citation type according to OSCOLA 4th edition rules.
+It refuses (status: upstream_bad_request) when confidence is 0.0 — TNA has
+confirmed the document is not real — or when a neutral citation arrives
+without a resolved_url (an ambiguous court code, such as a bare EWHC missing
+its division). In either case, do not invent a citation: report the failure
+and ask the user for the source URL or fuller identifying details.
 
-It declines (status: upstream_validation) whenever confidence is 0.0 — TNA
-has confirmed the document is not real — or whenever a neutral citation
-lacks a resolved_url (an ambiguous court code, e.g. a bare EWHC missing its
-division). Either way, do NOT invent a citation; report the failure and ask
-the user for the source URL or stronger identifying details.
-
-Do NOT assemble the input fields on your own. That structured input has to
-originate from citations_resolve — guessing at fields is the main way
-citations get fabricated, and this tool is the safeguard against it.
-
-Definitive OSCOLA formatting for UK legal citations, with no network call.`;
+The input fields must come straight from citations_resolve. Hand-assembling
+them is the main way citations get fabricated, and this tool is the last
+guard against that.`;
 
 export function registerCitationsTools(server: McpServer, deps: Deps): void {
   server.registerTool(
@@ -322,7 +313,7 @@ export function registerCitationsTools(server: McpServer, deps: Deps): void {
         const allFound = confident.concat(ambiguous);
         if (allFound.length === 0) {
           throw new Error(
-            `No recognised OSCOLA citation found in '${citation}'. ` +
+            `Could not recognise an OSCOLA citation in '${citation}'. ` +
               `Supported: [YYYY] COURT N, [YYYY] N SERIES PAGE, s.N Act YYYY, SI YYYY/N, Regulation (EU) YYYY/N`,
           );
         }
@@ -435,24 +426,25 @@ export function registerCitationsTools(server: McpServer, deps: Deps): void {
       try {
         if (confidence === 0.0) {
           return jsonResult({
-            status: "upstream_validation",
+            status: "upstream_bad_request",
             detail:
-              "Cannot format: citations_resolve returned confidence 0.0 — " +
-              "TNA confirmed this judgment does not exist at the resolved URL. " +
-              "Do not manufacture a citation. Ask the user for the source URL " +
-              "or better identifying details.",
+              "Cannot format at confidence 0.0: citations_resolve found no live " +
+              "document at the resolved URL, so TNA treats it as absent. Do not " +
+              "synthesise a citation — ask the user for the source URL or fuller " +
+              "identifying details.",
             is_retryable: false,
           });
         }
 
         if (citation_type === "neutral" && resolved_url == null) {
           return jsonResult({
-            status: "upstream_validation",
+            status: "upstream_bad_request",
             detail:
-              "Cannot format: neutral citation has no resolved_url — the court " +
-              "code is ambiguous or unsupported (e.g. bare EWHC without a " +
-              "division). Call citations_resolve with disambiguate=True or ask " +
-              "the user for the full citation including the division.",
+              "Cannot format: this neutral citation has no resolved_url because " +
+              "its court code is ambiguous or unsupported (for example a bare " +
+              "EWHC with no division). Re-run citations_resolve with " +
+              "disambiguate=True, or ask the user for the full citation including " +
+              "the division.",
             is_retryable: false,
           });
         }
@@ -497,7 +489,7 @@ export function registerCitationsTools(server: McpServer, deps: Deps): void {
           });
         } catch (exc) {
           return jsonResult({
-            status: "upstream_validation",
+            status: "upstream_bad_request",
             detail: exc instanceof Error ? exc.message : String(exc),
             is_retryable: false,
           });

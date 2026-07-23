@@ -219,13 +219,13 @@ describe("citations_format_oscola", () => {
 
   it("refuses to format a confidence-0.0 citation", async () => {
     const out = resultJson(await callTool(reg(), "citations_format_oscola", { citation_type: "neutral", confidence: 0.0 }));
-    expect(out.status).toBe("upstream_validation");
-    expect(out.detail).toMatch(/does not exist/);
+    expect(out.status).toBe("upstream_bad_request");
+    expect(out.detail).toMatch(/absent/);
   });
 
   it("refuses a neutral citation with no resolved_url", async () => {
     const out = resultJson(await callTool(reg(), "citations_format_oscola", { citation_type: "neutral", confidence: 1.0, resolved_url: null }));
-    expect(out.status).toBe("upstream_validation");
+    expect(out.status).toBe("upstream_bad_request");
     expect(out.detail).toMatch(/ambiguous or unsupported/);
   });
 
@@ -266,7 +266,7 @@ describe("citations_format_oscola", () => {
     ];
     for (const c of cases) {
       const out = resultJson(await callTool(reg(), "citations_format_oscola", c));
-      expect(out.status).toBe("upstream_validation");
+      expect(out.status).toBe("upstream_bad_request");
     }
   });
 });
