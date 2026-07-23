@@ -113,6 +113,30 @@ The full output presented to the user follows this order:
 
 Keep the total output concise. The debate was thorough — the summary should be crisp.
 
+## File output
+
+Every deliverable is written to a file **in addition to** being rendered inline. The files supplement the conversation; they **never replace** it — inline rendering is always still required.
+
+**Target directory:** a `legal-review/` directory in the current working directory, unless the user specifies another path. Create it if it does not exist.
+
+**Filenames** (kebab-case, numbered):
+
+| File | When written | Produced by |
+|------|--------------|-------------|
+| `01-debate-verdict.md` | **Always** | Phase 5 — the packaged verdict (the 6-part structure above) |
+| `02-judges-ruling.md` | Only if a judge's ruling is produced | Phase 4 (offered ruling on consensus, or the fallback synthesis) |
+| `03-case-strengthening.md` | Only if the winning package is produced | Phase 7 |
+| `04-appeal-ruling.md` | Only if an appeal is run | Phase 6 |
+
+**Every written file must:**
+
+- Open with an italic provenance line: `*<one-line description> (legal-debate skill, Phase N). Generated <currentDate>. Jurisdiction: <jurisdiction>.*`
+- State the **jurisdiction / governing law**.
+- Carry a **generation date** — taken from the session's `currentDate` context (`Date.now()` is unavailable in this environment; never fabricate a date — if none is available, ask the user).
+- Close with the **NOT LEGAL ADVICE** disclaimer below.
+
+The three files in `plugins/uk-legal/legal-review/` (`01-debate-verdict.md`, `02-judges-ruling.md`, `03-case-strengthening.md`) are the reference format for each document.
+
 ## Disclaimer
 
 Always append the following (or equivalent) to the final output:

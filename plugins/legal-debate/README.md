@@ -32,7 +32,7 @@ Given a legal question, the skill:
 3. **Spawns** the team, each agent cast as leading counsel and told to argue with cited authority and pre-empted counter-arguments.
 4. **Facilitates** two debate rounds — Challenge and Rebuttal — where agents attack weaknesses with specific legal grounds and concede genuine flaws.
 5. **Resolves** to a consensus, or falls back to a **judge synthesis** weighting arguments by strength of authority.
-6. **Outputs** a weighted comparison table, a ≤3-sentence verdict, key authorities, and a disclaimer — then offers optional **appeal** and **case-strengthening** stages.
+6. **Outputs** a weighted comparison table, a ≤3-sentence verdict, key authorities, and a disclaimer — then offers optional **appeal** and **case-strengthening** stages. Every deliverable is also **written to a file** under a `legal-review/` directory (verdict always; judge's ruling, appeal ruling, and case-strengthening package when those stages run), each carrying the disclaimer, generation date, and jurisdiction — the files supplement the inline output, never replace it.
 
 ## When it triggers
 

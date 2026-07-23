@@ -65,6 +65,16 @@ not a ground. The recognised grounds:
   that depends on an authority failing `citations_resolve` is struck out.
 - Append the **NOT LEGAL ADVICE** disclaimer to the appeal ruling.
 
+### File output
+
+When an appeal is run, **write the determination to `legal-review/04-appeal-ruling.md`**
+(in the current working directory, or a user-specified path) in addition to
+rendering it inline. The file opens with a provenance line —
+`*Appellate determination (legal-debate skill, Phase 6). Generated <currentDate>. Jurisdiction: <jurisdiction>.*`
+— records the grounds, the respondent's answer, the bench's determination and the
+disposition, and closes with the **NOT LEGAL ADVICE** disclaimer. Take the date
+from the session's `currentDate` context — never fabricate one.
+
 ---
 
 ## Phase 7 — Case-strengthening review ("winning package")
@@ -120,3 +130,14 @@ specific position they must advance.
   sourced" — never present it as established.
 - Append the **NOT LEGAL ADVICE** disclaimer and reiterate that a qualified,
   jurisdictionally-licensed lawyer must settle anything relied on.
+
+### File output
+
+When the package is produced, **write it to `legal-review/03-case-strengthening.md`**
+(in the current working directory, or a user-specified path) in addition to
+rendering it inline. The file opens with a provenance line —
+`*Partisan preparation (legal-debate skill, Phase 7). Generated <currentDate>. Jurisdiction: <jurisdiction>.*`
+— then a lead line naming the position advanced, the six package sections, and the
+**NOT LEGAL ADVICE** disclaimer. Take the date from the session's `currentDate`
+context — never fabricate one. See `plugins/uk-legal/legal-review/03-case-strengthening.md`
+for the reference format.

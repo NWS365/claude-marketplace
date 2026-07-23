@@ -1,7 +1,7 @@
 ---
 name: Legal Debate
 description: This skill should be used when the user asks to "debate this legal question", "evaluate legal strategies", "argue both sides", "compare legal positions", "what's the strongest argument", "moot this", "stress test this argument", "assess litigation risk", "which clause approach is safer", "appeal this outcome", "how do I win this position", or needs multiple perspectives on a legal problem. Also use it when the user supplies evidence to work through before arguing — "digest these documents", "extract the key facts from this bundle", "prepare this evidence for a debate" — which triggers an evidence pre-processing step first. Spawns a dynamic team of agents that argue competing legal positions, then debate to find the strongest approach, with optional appeal and case-strengthening stages.
-version: 0.3.0
+version: 0.4.0
 ---
 
 # Legal Debate Skill
@@ -41,6 +41,21 @@ This skill targets **legal reasoning problems** — litigation and dispute strat
 - **ALWAYS**, after the appeal has run or been declined, offer the human a **case-strengthening review** that produces a package on how best to win *their* position (see Phase 7)
 - **ALWAYS** treat the appeal and the case-strengthening review as *opt-in* — offer them, never impose them
 - **ALWAYS** append the "NOT LEGAL ADVICE" disclaimer to every output, including the appeal ruling and the case-strengthening package
+- **ALWAYS** write each deliverable to a file under a `legal-review/` directory in the current working directory (or a user-specified path), in **ADDITION** to rendering it inline — the files supplement the conversation, they never replace it. Use kebab-case, numbered filenames (see the file set below and `references/output-format.md`)
+- **ALWAYS** make every written file self-contained: it MUST carry the "NOT LEGAL ADVICE" disclaimer, a **generation date**, and the **jurisdiction / governing law**. `Date.now()` is unavailable in this environment — take the date from the session's `currentDate` context (do **NEVER** fabricate one; if no date is available, ask the user for it)
+
+## File outputs
+
+Each deliverable is written to a file under `legal-review/` (in the current working directory, or a path the user specifies) as it is produced, in addition to being rendered inline:
+
+| File | Written | Contents |
+|------|---------|----------|
+| `01-debate-verdict.md` | **Always** (Phase 5) | The packaged verdict — the 6-part structure in `references/output-format.md` (question, positions, weighted table, verdict, authorities, disclaimer) |
+| `02-judges-ruling.md` | Only if a judge's ruling is produced (Phase 4, or on the appeal bench where relevant) | The independent judge synthesis / ruling |
+| `03-case-strengthening.md` | Only if the Phase 7 package is produced | The partisan winning package |
+| `04-appeal-ruling.md` | Only if an appeal is run (Phase 6) | The appellate determination and disposition |
+
+Every one of these files opens with an italic provenance line — `*<description> (legal-debate skill, Phase N). Generated <currentDate>. Jurisdiction: <jurisdiction>.*` — and closes with the NOT LEGAL ADVICE disclaimer. The three files in `plugins/uk-legal/legal-review/` are the reference format for each document. Keep `01-debate-verdict.md` crisp, per the "keep the total output concise" rule.
 
 ## Authority & verification (uk-legal MCP)
 
@@ -184,6 +199,8 @@ After Round 2, assess consensus:
 - Weight arguments by strength of authority and fit to the facts, not by count of supporters
 - Produce a verdict with explicit reasoning for why the winning position edges out the alternatives
 
+**Whenever a judge's ruling is produced** (either the offered ruling on consensus, or the fallback synthesis), **write it to `legal-review/02-judges-ruling.md`** in addition to rendering it inline — provenance line + independent determination + the NOT LEGAL ADVICE disclaimer, following the reference format. (If the outcome comes purely from advocate consensus with no ruling, this file is not written.)
+
 ### Phase 5: Output
 
 Produce the final output in two parts:
@@ -192,6 +209,8 @@ Produce the final output in two parts:
 2. **Brief verdict** — 2-3 sentences: strongest position, primary rationale, and key caveat
 
 Append the **NOT LEGAL ADVICE** disclaimer. Present to the user for final decision. The debate informs — a qualified attorney and the user decide.
+
+**As the final step of producing the verdict, write it to `legal-review/01-debate-verdict.md`** — the full 6-part structure from `references/output-format.md` (question restatement, positions argued, weighted comparison table, verdict, key authorities & open points, disclaimer), opening with the provenance line (`Generated <currentDate>`, jurisdiction) and closing with the NOT LEGAL ADVICE disclaimer. This file is written on every run. Keep it crisp — the debate was thorough, the file is the summary.
 
 Then proceed to **Phase 6** — do not treat the matter as closed until the appeal and case-strengthening offers have been made.
 
@@ -207,6 +226,8 @@ Once the Phase 5 output exists, **offer the human an appeals process** before cl
   2. **Respondent's answer** — appoint a *respondent KC/SC* to defend the ruling ground-by-ground.
   3. **Appellate determination** — act as the appellate bench (a single appellate judge, or a 3-member panel for complex matters). Apply the standard of review: **de novo on questions of law; deference to findings that turned on facts/authority actually argued below.** Every authority relied on in the appeal passes the same *Authority & verification* protocol.
   4. **Disposition** — **appeal allowed** (ruling varied or reversed — state the revised position and what changed) or **appeal dismissed** (ruling affirmed, with reasons). Append the disclaimer.
+
+When an appeal is run, **write the appellate determination and disposition to `legal-review/04-appeal-ruling.md`** in addition to rendering it inline — provenance line (`Generated <currentDate>`, jurisdiction) + grounds, respondent's answer, determination, disposition + the NOT LEGAL ADVICE disclaimer.
 
 An appeal may only be run once by default; a further appeal requires the human to identify a genuinely new ground.
 
@@ -227,6 +248,8 @@ After the appeal has run **or been declined**, offer the human a partisan review
 
 This package is *advocacy preparation*, not advice — append the **NOT LEGAL ADVICE** disclaimer and reiterate that a qualified, jurisdictionally-licensed lawyer must settle anything relied on.
 
+When the package is produced, **write it to `legal-review/03-case-strengthening.md`** in addition to rendering it inline — provenance line (`Generated <currentDate>`, jurisdiction) + a lead line naming the position advanced + the 6-part package + the NOT LEGAL ADVICE disclaimer.
+
 ## Agent Communication Pattern
 
 ```
@@ -246,10 +269,12 @@ Phase 3, Round 2: SendMessage (rebuttal)
     facilitator ──challenges──> each counsel
     each counsel ──rebuttals──> facilitator
 
-Phase 4: Consensus or judge synthesis (+ offer judge's ruling even on consensus)
-Phase 5: Comparison table + verdict + disclaimer
-Phase 6: Offer appeal → grounds → respondent → appellate ruling (opt-in)
-Phase 7: Offer case-strengthening → winning package for the user's position (opt-in)
+Phase 4: Consensus or judge synthesis (+ offer judge's ruling even on consensus)   → legal-review/02-judges-ruling.md (if a ruling is produced)
+Phase 5: Comparison table + verdict + disclaimer                                   → legal-review/01-debate-verdict.md (always)
+Phase 6: Offer appeal → grounds → respondent → appellate ruling (opt-in)           → legal-review/04-appeal-ruling.md (if run)
+Phase 7: Offer case-strengthening → winning package for the user's position (opt-in) → legal-review/03-case-strengthening.md (if produced)
+
+All files are written to legal-review/ (or a user-specified path) in ADDITION to inline rendering; each carries the disclaimer, generation date (from session currentDate), and jurisdiction.
 ```
 
 ## Criteria Selection
