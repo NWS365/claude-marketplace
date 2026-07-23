@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from "vitest";
 import { registerParliament } from "../../src/modules/parliament/index.js";
 import { registerModule, callTool, resultJson, isErr, resourceByTemplate, fetched } from "../_harness.js";
 import {
-  stripHtml, slugify, safeInt, pyIntOr0, isoDate, pyRepr, formatHttpError, mostCommon, normHouse,
+  stripHtml, slugify, safeInt, pyIntOr0, isoDate, quoteArg, formatHttpError, mostCommon, normHouse,
   hansardContributionUrl, extractColumnNumbers, assignColumns, itemIsContribution, hansardSourceLabel,
   parseHansardContributions, parseDebateItemAsContribution, computeSearchFacets, parseTopDebatesPreview,
   parseDivisionMatch, parseTopDivisionsPreview, populateVotesIds,
@@ -48,11 +48,11 @@ describe("parliament/parsers — string & number helpers", () => {
     expect(isoDate("2024-05-05T10:00:00")).toBe("2024-05-05");
     expect(() => isoDate("not-a-date")).toThrow(/invalid isoformat/);
   });
-  it("pyRepr picks quotes and escapes", () => {
-    expect(pyRepr("simple")).toBe("'simple'");
-    expect(pyRepr("it's")).toBe(`"it's"`); // has single, no double -> double quotes
-    expect(pyRepr(`he said "hi" it's`)).toBe(`'he said "hi" it\\'s'`); // both -> single, escape single
-    expect(pyRepr("tab\tnew\nline\\x")).toContain("\\t");
+  it("quoteArg picks quotes and escapes", () => {
+    expect(quoteArg("simple")).toBe("'simple'");
+    expect(quoteArg("it's")).toBe(`"it's"`); // has single, no double -> double quotes
+    expect(quoteArg(`he said "hi" it's`)).toBe(`'he said "hi" it\\'s'`); // both -> single, escape single
+    expect(quoteArg("tab\tnew\nline\\x")).toContain("\\t");
   });
   it("mostCommon sorts by count desc", () => {
     const m = new Map([["a", 1], ["b", 3], ["c", 2]]);

@@ -36,7 +36,7 @@ import {
   parseTopDivisionsPreview,
   populateVotesIds,
   pyIntOr0,
-  pyRepr,
+  quoteArg,
   safeInt,
 } from "./parsers.js";
 import type {
@@ -202,7 +202,7 @@ it out with web search or half-remembered training data.`,
         };
         return jsonResult(result);
       } catch (err) {
-        return toolErrorFromException(err, `parliament_search_hansard(query=${pyRepr(query)})`);
+        return toolErrorFromException(err, `parliament_search_hansard(query=${quoteArg(query)})`);
       }
     }
   );
@@ -360,7 +360,7 @@ This is the definitive source for corpus-level signals across UK Hansard.`,
         };
         return jsonResult(result);
       } catch (err) {
-        return toolErrorFromException(err, `parliament_policy_position_summary(topic=${pyRepr(topic)})`);
+        return toolErrorFromException(err, `parliament_policy_position_summary(topic=${quoteArg(topic)})`);
       }
     }
   );
@@ -416,7 +416,7 @@ anti-bypass note shows why).`,
         const result: MemberSearchResult = { query: name, total: members.length, members };
         return jsonResult(result);
       } catch (err) {
-        return toolErrorFromException(err, `parliament_find_member(name=${pyRepr(name)})`);
+        return toolErrorFromException(err, `parliament_find_member(name=${quoteArg(name)})`);
       }
     }
   );
@@ -706,7 +706,7 @@ This is the definitive source for UK Parliament petitions
         };
         return jsonResult(result);
       } catch (err) {
-        return toolErrorFromException(err, `parliament_search_petitions(query=${pyRepr(query)})`);
+        return toolErrorFromException(err, `parliament_search_petitions(query=${quoteArg(query)})`);
       }
     }
   );
@@ -764,7 +764,7 @@ whenever no match is found.`,
       } catch (err) {
         return toolErrorFromException(
           err,
-          `parliament_get_debate_divisions(debate_ext_id=${pyRepr(debate_ext_id)})`
+          `parliament_get_debate_divisions(debate_ext_id=${quoteArg(debate_ext_id)})`
         );
       }
     }
@@ -848,7 +848,7 @@ from training data. This is the definitive source for member contributions.`,
       } catch (err) {
         return toolErrorFromException(
           err,
-          `parliament_get_debate_contributions(debate_ext_id=${pyRepr(debate_ext_id)})`
+          `parliament_get_debate_contributions(debate_ext_id=${quoteArg(debate_ext_id)})`
         );
       }
     }
@@ -966,7 +966,7 @@ This is the definitive source for resolving OSCOLA Hansard columns.`,
       } catch (err) {
         return toolErrorFromException(
           err,
-          `parliament_lookup_by_column(column_number=${pyRepr(column_number)}, volume_number=${volume_number})`
+          `parliament_lookup_by_column(column_number=${quoteArg(column_number)}, volume_number=${volume_number})`
         );
       }
     }

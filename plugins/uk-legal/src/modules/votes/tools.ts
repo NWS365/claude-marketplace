@@ -27,8 +27,8 @@ import {
   searchUrl,
 } from "./parsers.js";
 
-/** Render a scalar the way Python's repr() would, for the `attempted` error breadcrumb. */
-function pyRepr(v: unknown): string {
+/** Quote a scalar for the `attempted` error breadcrumb. */
+function quoteArg(v: unknown): string {
   if (v === undefined || v === null) return "None";
   if (typeof v === "string") return `'${v}'`;
   return String(v);
@@ -140,7 +140,7 @@ export function registerVotesTools(server: McpServer, deps: Deps): void {
       } catch (err) {
         return toolErrorFromException(
           err,
-          `votes_search_divisions(query=${pyRepr(query)}, house=${pyRepr(house)})`,
+          `votes_search_divisions(query=${quoteArg(query)}, house=${quoteArg(house)})`,
         );
       }
     },
@@ -206,7 +206,7 @@ export function registerVotesTools(server: McpServer, deps: Deps): void {
       } catch (err) {
         return toolErrorFromException(
           err,
-          `votes_get_division(division_id=${division_id}, house=${pyRepr(house)})`,
+          `votes_get_division(division_id=${division_id}, house=${quoteArg(house)})`,
         );
       }
     },

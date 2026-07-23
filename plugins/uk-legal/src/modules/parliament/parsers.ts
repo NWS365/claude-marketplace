@@ -94,8 +94,8 @@ export function isoDate(raw: any): string {
   return s;
 }
 
-/** Render a string as Python's repr() would, for `attempted=` descriptors and prompt {x!r} slots. */
-export function pyRepr(s: string): string {
+/** Quote a string for the `attempted=` error breadcrumb: wrap in quotes and escape control characters. */
+export function quoteArg(s: string): string {
   const hasSingle = s.includes("'");
   const hasDouble = s.includes('"');
   const quote = hasSingle && !hasDouble ? '"' : "'";

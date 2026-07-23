@@ -1,6 +1,12 @@
-// Re-runnable parity + smoke verifier (compliance artifact): `npm run verify`.
-// Spawns the built dist/server.js over stdio, asserts the exact tool/resource/
-// prompt surface, and runs one offline end-to-end tool call (citations_parse).
+// Interface-compatibility + smoke verifier (compliance artifact): `npm run verify`.
+//
+// Asserts this server's PUBLIC MCP INTERFACE — the exact set of tool, resource,
+// and prompt names it exposes — so that surface stays stable and remains
+// compatible with the uk-legal-mcp interface it targets. These names are
+// functional identifiers, not protected expression: the check verifies the
+// interface contract, not any copying of source. It spawns the built
+// dist/server.js over stdio and runs one offline end-to-end tool call
+// (citations_parse).
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { fileURLToPath } from "node:url";

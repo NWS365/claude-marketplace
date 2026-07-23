@@ -26,8 +26,8 @@ import {
   TNA_BASE,
 } from "./parsers.js";
 
-/** Render a scalar the way Python's repr() would, for the `attempted` error breadcrumb. */
-function pyRepr(v: unknown): string {
+/** Quote a scalar for the `attempted` error breadcrumb. */
+function quoteArg(v: unknown): string {
   if (v === undefined || v === null) return "None";
   if (typeof v === "string") return `'${v}'`;
   if (typeof v === "boolean") return v ? "True" : "False";
@@ -291,7 +291,7 @@ export function registerCitationsTools(server: McpServer, deps: Deps): void {
       } catch (err) {
         return toolErrorFromException(
           err,
-          `citations_parse(text=<${text.length} chars>, disambiguate=${pyRepr(disambiguate)})`,
+          `citations_parse(text=<${text.length} chars>, disambiguate=${quoteArg(disambiguate)})`,
         );
       }
     },
@@ -337,7 +337,7 @@ export function registerCitationsTools(server: McpServer, deps: Deps): void {
             message: `TNA verification failed after retry (${err.name}).`,
           });
         }
-        return toolErrorFromException(err, `citations_resolve(citation=${pyRepr(citation)})`);
+        return toolErrorFromException(err, `citations_resolve(citation=${quoteArg(citation)})`);
       }
     },
   );
@@ -393,7 +393,7 @@ export function registerCitationsTools(server: McpServer, deps: Deps): void {
         };
         return jsonResult(out);
       } catch (err) {
-        return toolErrorFromException(err, `citations_network(case_uri=${pyRepr(case_uri)})`);
+        return toolErrorFromException(err, `citations_network(case_uri=${quoteArg(case_uri)})`);
       }
     },
   );
@@ -495,7 +495,7 @@ export function registerCitationsTools(server: McpServer, deps: Deps): void {
           });
         }
       } catch (err) {
-        return toolErrorFromException(err, `citations_format_oscola(citation_type=${pyRepr(citation_type)})`);
+        return toolErrorFromException(err, `citations_format_oscola(citation_type=${quoteArg(citation_type)})`);
       }
     },
   );
