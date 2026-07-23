@@ -24,29 +24,29 @@ export function classifyError(err) {
     if (err instanceof UpstreamHttpError) {
         const s = err.status;
         if (s === 404)
-            return { status: "not_found", detail: "upstream returned 404 — the URI or identifier is wrong" };
+            return { status: "not_found", detail: "the requested record was not found upstream (404) — check the identifier" };
         if (s === 401)
-            return { status: "auth_required", detail: "upstream requires credentials not configured on this server" };
+            return { status: "auth_required", detail: "this upstream needs credentials that are not configured here" };
         if (s === 403)
-            return { status: "auth_required", detail: `upstream denied access — ${err.url}` };
+            return { status: "auth_required", detail: `access was refused by the upstream (403) — ${err.url}` };
         if (s === 429)
-            return { status: "upstream_unavailable", detail: "upstream rate-limit hit — retry shortly" };
+            return { status: "upstream_unavailable", detail: "hit the upstream rate limit — pause briefly and retry" };
         if (s === 437)
-            return { status: "upstream_unavailable", detail: "upstream WAF blocked the request (437) — retry shortly" };
+            return { status: "upstream_unavailable", detail: "the upstream WAF rejected the request (437) — pause briefly and retry" };
         if (s >= 400 && s < 500)
-            return { status: "upstream_validation", detail: `upstream rejected request (${s}) — ${err.url}` };
+            return { status: "upstream_bad_request", detail: `the upstream rejected the request as invalid (${s}) — ${err.url}` };
         if (s >= 500)
-            return { status: "upstream_unavailable", detail: `upstream returned ${s} — try again later` };
+            return { status: "upstream_unavailable", detail: `the upstream failed to serve the request (${s}) — retry later` };
     }
     const name = err instanceof Error ? err.name : "";
     const msg = err instanceof Error ? err.message : String(err);
     if (/timeout/i.test(name) || /timed out|timeout|aborted/i.test(msg)) {
-        return { status: "upstream_timeout", detail: "request timed out — upstream may be slow, retry" };
+        return { status: "upstream_timeout", detail: "the request did not complete in time — the upstream may be slow; retry" };
     }
     if (/connect/i.test(name) || /ECONNREFUSED|ENOTFOUND|network/i.test(msg)) {
-        return { status: "upstream_unavailable", detail: "could not connect to upstream — network or upstream issue" };
+        return { status: "upstream_unavailable", detail: "no connection could be made to the upstream — a network or upstream fault" };
     }
-    return { status: "unknown_error", detail: `${name || "Error"}: ${msg}`.slice(0, 200) };
+    return { status: "error_unclassified", detail: `${name || "Error"}: ${msg}`.slice(0, 200) };
 }
 // --- Plain envelope objects (for resources / JSON returns) ---
 export function errorEnvelope(err, extras = {}) {
@@ -56,8 +56,8 @@ export function errorEnvelope(err, extras = {}) {
 export function notFoundEnvelope(detail, extras = {}) {
     return { status: "not_found", detail, ...extras };
 }
-export function emptyEnvelope(detail = "no results matched the query", extras = {}) {
-    return { status: "empty", data: [], detail, ...extras };
+export function emptyEnvelope(detail = "the query ran but matched no records", extras = {}) {
+    return { status: "no_results", data: [], detail, ...extras };
 }
 export function wrapResponse(data) {
     return { status: "ok", data };
@@ -84,12 +84,12 @@ export function toolErrorFromException(err, attempted) {
         // Only 429/503 are treated as transient; only 403 is auth_required;
         // 401 and all other 5xx fall through to unknown.
         if (s === 404)
-            return errorResult({ error_category: "not_found", is_retryable: false, attempted, description: `Resource not found (404). Check the identifier is correct. URL: ${err.url}` });
+            return errorResult({ error_category: "not_found", is_retryable: false, attempted, description: `Nothing exists at that identifier (404). Confirm it is correct. URL: ${err.url}` });
         if (s === 403)
-            return errorResult({ error_category: "auth_required", is_retryable: false, attempted, description: `Access denied (403). URL: ${err.url}` });
+            return errorResult({ error_category: "auth_required", is_retryable: false, attempted, description: `The upstream refused access (403). URL: ${err.url}` });
         if (s === 429 || s === 503)
-            return errorResult({ error_category: "transient", is_retryable: true, attempted, description: `Upstream returned ${s} — retry after a short delay. URL: ${err.url}` });
-        return errorResult({ error_category: "unknown", is_retryable: false, attempted, description: `Upstream returned ${s}. URL: ${err.url}` });
+            return errorResult({ error_category: "transient", is_retryable: true, attempted, description: `The upstream returned ${s}; wait a moment and try again. URL: ${err.url}` });
+        return errorResult({ error_category: "unknown", is_retryable: false, attempted, description: `The upstream returned ${s}. URL: ${err.url}` });
     }
     const { status, detail } = classifyError(err);
     const retryable = status === "upstream_timeout" || status === "upstream_unavailable";

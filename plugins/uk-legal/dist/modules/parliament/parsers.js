@@ -75,8 +75,8 @@ export function isoDate(raw) {
         throw new Error(`invalid isoformat string: ${s}`);
     return s;
 }
-/** Render a string as Python's repr() would, for `attempted=` descriptors and prompt {x!r} slots. */
-export function pyRepr(s) {
+/** Quote a string for the `attempted=` error breadcrumb: wrap in quotes and escape control characters. */
+export function quoteArg(s) {
     const hasSingle = s.includes("'");
     const hasDouble = s.includes('"');
     const quote = hasSingle && !hasDouble ? '"' : "'";

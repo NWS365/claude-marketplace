@@ -15,25 +15,23 @@ import { TTL } from "../../shared/cache.js";
 import type { BillSearchResult } from "./models.js";
 import { BILLS_BASE, HOUSE_MAP, STAGE_ID_MAP, parseBillDetail, parseBillSummary } from "./parsers.js";
 
-const SEARCH_BILLS_DESCRIPTION = `Reach for this tool to look up UK parliamentary bills, filtering by keyword, session, house, or where they are in the legislative process.
+const SEARCH_BILLS_DESCRIPTION = `Looks up UK parliamentary bills, filtered by keyword, session, house, or how far they have progressed.
 
-Hands back one page of short bill records — title, the stage each is at,
-and whether it has passed into an Act. Take a bill_id from the results and
-feed it to bills_get_bill for the complete picture (sponsors, long title,
-Royal Assent date).
+Returns one page of short records — title, current stage, and whether the bill
+has become an Act. Pass a bill_id from the results to bills_get_bill for the
+full picture (sponsors, long title, Royal Assent date).
 
-This is the definitive reference for where a UK parliamentary bill stands.`;
+Use this as the reference for where a UK bill currently stands.`;
 
-const GET_BILL_DESCRIPTION = `Reach for this tool once you hold a bill_id (obtained via bills_search_bills) and need the complete record.
+const GET_BILL_DESCRIPTION = `Fetches the complete record for a single bill, given a bill_id from bills_search_bills.
 
-Gives you the sponsors, present stage, long title, summary, and — for
-enacted bills — the Royal Assent date. The summary is limited to
-max_summary_chars; consult summary_truncated in the reply to know whether
-it was clipped.
+Returns sponsors, current stage, long title, summary, and — once enacted — the
+Royal Assent date. The summary is capped at max_summary_chars; check
+summary_truncated to see whether it was clipped.
 
-As a follow-up, run parliament_search_hansard(query=bill_short_title) to
-surface the bill's debates, or call bills_search_bills again on a related
-keyword to explore neighbouring bills.`;
+To go further, run parliament_search_hansard(query=bill_short_title) for the
+bill's debates, or search bills_search_bills again on a related keyword for
+neighbouring bills.`;
 
 export function registerBillsTools(server: McpServer, deps: Deps): void {
   server.registerTool(

@@ -14,33 +14,31 @@ const HMRC_API_BASE_DEFAULT = "https://test-api.service.hmrc.gov.uk";
 const GOVUK_SEARCH_BASE = "https://www.gov.uk/api/search.json";
 const REQUEST_TIMEOUT_MS = 30_000;
 // --- Tool description strings shown to the model ---
-const GET_VAT_RATE_DESC = `Call this when you have a UK product or service and need to know which VAT band it falls into.
+const GET_VAT_RATE_DESC = `Maps a UK product or service to its VAT band.
 
-The reply names the category (standard 20%, reduced 5%, zero 0%, or exempt),
-the date it took effect, and any caveats or edge cases that apply.
+Returns the band (standard 20%, reduced 5%, zero 0%, or exempt), the date that
+rate took effect, and any caveats or edge cases.
 
-NOTE: the answer comes from a fixed reference table frozen at the 22 Nov 2023
-Autumn Statement. Later Budgets may have shifted rates, so when timing matters
-confirm the figure on GOV.UK through hmrc_search_guidance.`;
-const CHECK_MTD_STATUS_DESC = `Call this with a 9-digit VAT Registration Number to find whether that business falls under the Making Tax Digital VAT mandate.
+The figures come from a fixed reference table as at the 22 November 2023 Autumn
+Statement; a later Budget may have moved them, so where the exact rate matters,
+confirm it on GOV.UK via hmrc_search_guidance.`;
+const CHECK_MTD_STATUS_DESC = `Given a 9-digit VAT Registration Number, reports whether that business is within the Making Tax Digital VAT mandate.
 
-You get back the mandate flag, the date it starts from, and the registered
-trading name.
+Returns the mandate flag, the date it applies from, and the registered trading
+name.
 
-By default the call targets HMRC's sandbox; point HMRC_API_BASE at
-'https://api.service.hmrc.gov.uk' to reach production instead. OAuth 2.0
-access needs the HMRC_CLIENT_ID and HMRC_CLIENT_SECRET environment variables
-set. When they are absent the tool errors out rather than guessing — never
-assume a status.`;
-const SEARCH_GUIDANCE_DESC = `Reach for this to look up HMRC tax guidance on GOV.UK for a given subject (VAT, income tax, corporation tax, and so on).
+Calls HMRC's sandbox by default; set HMRC_API_BASE to
+'https://api.service.hmrc.gov.uk' for production. OAuth 2.0 access requires the
+HMRC_CLIENT_ID and HMRC_CLIENT_SECRET environment variables — with them unset
+the tool errors rather than guess a status.`;
+const SEARCH_GUIDANCE_DESC = `Looks up HMRC tax guidance published on GOV.UK for a given subject (VAT, income tax, corporation tax, and the like).
 
-Each hit carries its title, link, a short summary, and the date it was last
-revised. The query runs against the official GOV.UK content API, scoped to
-HMRC-published pages.
+Each result carries a title, link, short summary, and the date it was last
+updated, drawn from the official GOV.UK content API and scoped to HMRC pages.
 
-Treat this as the definitive source for current HMRC guidance. Ordinary web
-search tends to surface stale copies or third-party rewrites, so do not pad
-the results with it.`;
+Use this as the authoritative source for current HMRC guidance; a general web
+search tends to return stale copies or third-party rewrites, so do not top up
+these results with it.`;
 export function registerHmrcTools(server, deps) {
     // -------------------------------------------------------------------------
     // hmrc_get_vat_rate — offline table lookup, no network call (READ_ONLY_CLOSED).

@@ -23,24 +23,22 @@ export function registerCaseLawTools(server, deps) {
     // ------------------------------------------------------------------ search
     server.registerTool("case_law_search", {
         title: "Search UK Case Law",
-        description: `Reach for this to look up UK judgments — whether by the parties, the court, a named judge, a date, or plain keywords.
+        description: `Searches UK judgments by party, court, judge, date, or plain keywords.
 
-You get back a paged list of judgment summaries, each carrying a neutral
-citation, court, the relevant dates, a slug, and a durable TNA URI. From a
-result: hand its slug to judgment_get_header, judgment_get_index, or
-judgment_get_paragraph (or the equivalent judgment:// resources) to fetch
-content; run its neutral citation through citations_resolve to confirm it
-before you build an OSCOLA reference; and use case_law_grep_judgment to
-search text inside one judgment. Where a party name produces a long list,
-tighten it with the court and year filters first — homing in on the likely
-case beats grepping through every candidate's full text.
+Returns a paged list of judgment summaries, each with a neutral citation,
+court, the relevant dates, a slug, and a durable TNA URI. From a result: pass
+the slug to judgment_get_header, judgment_get_index, or judgment_get_paragraph
+(or the matching judgment:// resources) to fetch content; run the neutral
+citation through citations_resolve before building an OSCOLA reference; and use
+case_law_grep_judgment to search within a single judgment. When a party name
+returns a long list, narrow it with the court and year filters first — homing
+in on the likely case beats grepping every candidate's full text.
 
-What is indexed: Find Case Law's holdings reach back to roughly the early
-2000s. To get at an older authority, track down a recent judgment that
-cites it and read the citing paragraph.
+Coverage: Find Case Law reaches back to roughly the early 2000s. For an older
+authority, find a recent judgment that cites it and read the citing paragraph.
 
-This is the definitive source for UK case law; ordinary web search returns
-stale or fragile links, so don't lean on it as a supplement.`,
+This is the primary source for UK case law; a general web search returns stale
+or fragile links, so do not lean on it as a supplement.`,
         inputSchema: {
             query: z
                 .string()
@@ -106,19 +104,18 @@ stale or fragile links, so don't lean on it as a supplement.`,
     // ----------------------------------------------------------- grep_judgment
     server.registerTool("case_law_grep_judgment", {
         title: "Search within a UK Court Judgment",
-        description: `Turn to this once you hold a judgment slug and want the paragraphs whose text matches some pattern.
+        description: `Searches within a single judgment (identified by its slug) for the paragraphs whose text matches a pattern.
 
-Each hit comes back as \`{eId, snippet, match}\`, the snippet being a short
-excerpt built around where the pattern landed. To read a match in full,
-follow up with judgment_get_paragraph(slug, eId) or the
-judgment://{slug}/para/{eId} resource.
+Each hit is \`{eId, snippet, match}\`, the snippet a short excerpt around where
+the pattern landed. Read a match in full with judgment_get_paragraph(slug, eId)
+or the judgment://{slug}/para/{eId} resource.
 
-When to use it: searching the body of a single judgment for wording (say
-"negligence", "test for foreseeability", or "Donoghue"). If instead you
-want to browse by paragraph number via eId, use judgment_get_index.
+Use it to hunt wording inside one judgment (for example "negligence", "test for
+foreseeability", or "Donoghue"). To browse by paragraph number via eId instead,
+use judgment_get_index.
 
-The pattern is read as a regular expression; should it fail to compile,
-the search degrades to a plain substring match.`,
+The pattern is treated as a regular expression; if it will not compile, the
+search falls back to a plain substring match.`,
         inputSchema: {
             slug: z
                 .string()
@@ -163,12 +160,11 @@ the search degrades to a plain substring match.`,
     // ------------------------------------------------------ judgment_get_header
     server.registerTool("judgment_get_header", {
         title: "Get Judgment Header",
-        description: `Use this once you have a judgment slug and want its metadata — the parties, judges, neutral citation, court, and dates.
+        description: `Returns a judgment's metadata — parties, judges, neutral citation, court, and dates — given its slug.
 
-Run case_law_search beforehand to obtain the slug. From here, reach for
-judgment_get_index to enumerate the paragraphs, then judgment_get_paragraph
-to read particular ones. This is the definitive source for UK judgment
-metadata.`,
+Get the slug from case_law_search first. From here, use judgment_get_index to
+list the paragraphs and then judgment_get_paragraph to read particular ones.
+This is the source for UK judgment metadata.`,
         inputSchema: {
             slug: z
                 .string()
@@ -189,12 +185,11 @@ metadata.`,
     // ------------------------------------------------------- judgment_get_index
     server.registerTool("judgment_get_index", {
         title: "Get Judgment Paragraph Index",
-        description: `Use this when you hold a judgment slug and want its paragraph navigation index — an eId plus a preview line for each paragraph.
+        description: `Returns a judgment's paragraph navigation index — an eId and a preview line per paragraph — given its slug.
 
-Get the slug from case_law_search first. Then take any eId from the
-returned list and pass it to judgment_get_paragraph for that paragraph's
-full text, or run case_law_grep_judgment to search the wording across every
-paragraph.`,
+Get the slug from case_law_search first. Take any eId from the list and pass it
+to judgment_get_paragraph for that paragraph's full text, or run
+case_law_grep_judgment to search the wording across every paragraph.`,
         inputSchema: {
             slug: z.string().min(3).max(200).describe("A judgment slug, e.g. 'uksc/2024/12'"),
         },
@@ -222,12 +217,11 @@ paragraph.`,
     // --------------------------------------------------- judgment_get_paragraph
     server.registerTool("judgment_get_paragraph", {
         title: "Get Judgment Paragraph",
-        description: `Use this when you have both a judgment slug and a LegalDocML eId and want the full text of that paragraph.
+        description: `Returns the full text of one paragraph, given a judgment slug and a LegalDocML eId.
 
-First find the available eIds through judgment_get_index (or pinpoint
-paragraphs by their wording with case_law_grep_judgment). The response is
-the paragraph's XML content, typically somewhere between 400 and 1,700
-tokens.`,
+Find the available eIds via judgment_get_index (or locate paragraphs by their
+wording with case_law_grep_judgment). The response is the paragraph's XML
+content, typically 400 to 1,700 tokens.`,
         inputSchema: {
             slug: z.string().min(3).max(200).describe("A judgment slug, e.g. 'uksc/2024/12'"),
             eId: z
@@ -259,7 +253,7 @@ tokens.`,
  */
 function registerCaseLawResources(server, deps) {
     server.registerResource("UK Court Judgment — metadata header", new ResourceTemplate("judgment://{+slug}/header", { list: undefined }), {
-        description: "A TNA judgment's metadata — parties, judges, neutral citation, court, and dates — around 1,000 tokens. Read this first to get your bearings on a judgment. Example slugs: 'uksc/2024/12', 'ewca/civ/2023/450'.",
+        description: "A TNA judgment's metadata — parties, judges, neutral citation, court, and dates — about 1,000 tokens. Read this first to orient yourself on a judgment. Example slugs: 'uksc/2024/12', 'ewca/civ/2023/450'.",
         mimeType: "application/xml",
     }, async (uri, variables) => {
         const slug = String(variables.slug);
@@ -267,7 +261,7 @@ function registerCaseLawResources(server, deps) {
         return { contents: [{ uri: uri.href, mimeType: "application/xml", text: extractHeader(xml) }] };
     });
     server.registerResource("UK Court Judgment — paragraph index", new ResourceTemplate("judgment://{+slug}/index", { list: undefined }), {
-        description: "A navigation index of 'eId: first_line' rows, one per paragraph in the judgment (roughly 4,000 tokens for a typical Supreme Court decision). Use it to learn the paragraph identifiers, then open individual paragraphs through judgment://{slug}/para/{eId}. To locate paragraphs by their content instead, use the case_law_grep_judgment tool.",
+        description: "A navigation index of 'eId: first_line' rows, one per paragraph (roughly 4,000 tokens for a typical Supreme Court decision). Use it to learn the paragraph identifiers, then open individual paragraphs via judgment://{slug}/para/{eId}. To find paragraphs by content instead, use the case_law_grep_judgment tool.",
         mimeType: "text/plain",
     }, async (uri, variables) => {
         const slug = String(variables.slug);
@@ -275,7 +269,7 @@ function registerCaseLawResources(server, deps) {
         return { contents: [{ uri: uri.href, mimeType: "text/plain", text: extractIndex(xml) }] };
     });
     server.registerResource("UK Court Judgment — single paragraph", new ResourceTemplate("judgment://{+slug}/para/{eId}", { list: undefined }), {
-        description: "One <paragraph> element identified by its LegalDocML eId (for example 'para_12'), together with whatever sub-paragraphs sit inside it. Usually 400-1,700 tokens. Consult the index resource to find which eIds are available.",
+        description: "One <paragraph> element identified by its LegalDocML eId (for example 'para_12'), with any sub-paragraphs inside it. Usually 400-1,700 tokens. Check the index resource for the available eIds.",
         mimeType: "application/xml",
     }, async (uri, variables) => {
         const slug = String(variables.slug);

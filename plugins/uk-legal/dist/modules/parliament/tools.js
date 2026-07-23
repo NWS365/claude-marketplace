@@ -14,14 +14,14 @@ import { jsonResult, toolErrorFromException } from "../../shared/envelope.js";
 import { assertOk, jsonOf } from "../../shared/http.js";
 import { READ_ONLY_OPEN, withTitle } from "../../shared/annotations.js";
 import { TTL } from "../../shared/cache.js";
-import { HANSARD_API, INTEREST_CATEGORIES, INTERESTS_BASE, MEMBERS_BASE, PETITIONS_BASE, assignColumns, computeSearchFacets, hansardSourceLabel, isoDate, itemIsContribution, mostCommon, normHouse, parseDebateItemAsContribution, parseDivisionMatch, parseHansardContributions, parseTopDebatesPreview, parseTopDivisionsPreview, populateVotesIds, pyIntOr0, pyRepr, safeInt, } from "./parsers.js";
+import { HANSARD_API, INTEREST_CATEGORIES, INTERESTS_BASE, MEMBERS_BASE, PETITIONS_BASE, assignColumns, computeSearchFacets, hansardSourceLabel, isoDate, itemIsContribution, mostCommon, normHouse, parseDebateItemAsContribution, parseDivisionMatch, parseHansardContributions, parseTopDebatesPreview, parseTopDivisionsPreview, populateVotesIds, pyIntOr0, quoteArg, safeInt, } from "./parsers.js";
 export function registerParliamentTools(server, deps) {
     // -------------------------------------------------------------------------
     // parliament_search_hansard
     // -------------------------------------------------------------------------
     server.registerTool("parliament_search_hansard", {
         title: "Search Hansard Debates",
-        description: `Reach for this to search Hansard by subject, the name of a bill, or a text phrase.
+        description: `Searches Hansard by subject, bill name, or a text phrase.
 
 Every hit carries citation-grade fields: member_id, attributed_to,
 column_ref, debate_id, debate_ext_id, contribution_ext_id, and a public URL.
@@ -39,8 +39,8 @@ The limit and offset arguments map onto the upstream paginated endpoint.
 When you want coverage across an entire topic, use
 parliament_policy_position_summary instead.
 
-Treat this as the definitive record of UK parliamentary debate — do not pad
-it out with web search or half-remembered training data.`,
+Use this as the record of UK parliamentary debate; do not supplement it with
+web search or recalled training data.`,
         inputSchema: {
             query: z
                 .string()
@@ -145,7 +145,7 @@ it out with web search or half-remembered training data.`,
             return jsonResult(result);
         }
         catch (err) {
-            return toolErrorFromException(err, `parliament_search_hansard(query=${pyRepr(query)})`);
+            return toolErrorFromException(err, `parliament_search_hansard(query=${quoteArg(query)})`);
         }
     });
     // -------------------------------------------------------------------------
@@ -153,7 +153,7 @@ it out with web search or half-remembered training data.`,
     // -------------------------------------------------------------------------
     server.registerTool("parliament_policy_position_summary", {
         title: "Hansard Policy Position Summary (deterministic facets)",
-        description: `Use this when you want debate-level corpus signals for a topic — the by_house, by_year, and by_section breakdowns — without wading through every contribution.
+        description: `Rolls up debate-level corpus signals for a topic — the by_house, by_year, and by_section breakdowns — without reading every contribution.
 
 It rolls up debate-level signals for a topic as plain tallies: no model in
 the loop, no editorial characterisation. It pages through
@@ -173,7 +173,7 @@ this deterministic summary. To learn who spoke within a given debate, read
 hansard://debate/{debate_ext_id}/header for an ordered index of
 contributions, or call parliament_member_debates for a single named member.
 
-This is the definitive source for corpus-level signals across UK Hansard.`,
+Use this for corpus-level signals across UK Hansard.`,
         inputSchema: {
             topic: z
                 .string()
@@ -297,7 +297,7 @@ This is the definitive source for corpus-level signals across UK Hansard.`,
             return jsonResult(result);
         }
         catch (err) {
-            return toolErrorFromException(err, `parliament_policy_position_summary(topic=${pyRepr(topic)})`);
+            return toolErrorFromException(err, `parliament_policy_position_summary(topic=${quoteArg(topic)})`);
         }
     });
     // -------------------------------------------------------------------------
@@ -305,7 +305,7 @@ This is the definitive source for corpus-level signals across UK Hansard.`,
     // -------------------------------------------------------------------------
     server.registerTool("parliament_find_member", {
         title: "Find Member of Parliament",
-        description: `Use this when you know a member's name and need the integer member_id that goes with it.
+        description: `Resolves a member's name to the integer member_id.
 
 It hands back every member whose name matches the query, each carrying the
 integer \`id\`, party, constituency, house, and whether they currently sit.
@@ -349,7 +349,7 @@ anti-bypass note shows why).`,
             return jsonResult(result);
         }
         catch (err) {
-            return toolErrorFromException(err, `parliament_find_member(name=${pyRepr(name)})`);
+            return toolErrorFromException(err, `parliament_find_member(name=${quoteArg(name)})`);
         }
     });
     // -------------------------------------------------------------------------
@@ -357,7 +357,7 @@ anti-bypass note shows why).`,
     // -------------------------------------------------------------------------
     server.registerTool("parliament_member_debates", {
         title: "Get Member Debates",
-        description: `Use this when you have a member_id and want the contributions in which THAT member actually used a given topic phrase (a search over the text body).
+        description: `Given a member_id, returns the contributions in which that member actually used a given topic phrase (a search over the text body).
 
 First call parliament_find_member(name) to get the integer member_id.
 
@@ -425,7 +425,7 @@ The text field of each contribution is truncated at 3000 characters.`,
     // -------------------------------------------------------------------------
     server.registerTool("parliament_member_interests", {
         title: "Get Member Financial Interests",
-        description: `Use this when you have a member_id and need their registered financial interests — donations, directorships, land, gifts.
+        description: `Given a member_id, returns their registered financial interests — donations, directorships, land, gifts.
 
 First call parliament_find_member(name) to obtain the integer member_id.
 
@@ -436,9 +436,8 @@ offset raised by the number returned while has_more is true. The
 description text is trimmed to max_description_chars; increase that when
 forensic provenance work needs the whole narrative.
 
-This is the definitive record of financial-interest declarations by UK MPs
-and peers, served from the Members API. A web search only turns up stale
-snapshots.`,
+This is the record of financial-interest declarations by UK MPs and peers,
+served from the Members API; a web search only turns up stale snapshots.`,
         inputSchema: {
             member_id: z
                 .number()
@@ -535,14 +534,13 @@ snapshots.`,
     // -------------------------------------------------------------------------
     server.registerTool("parliament_search_petitions", {
         title: "Search UK Parliament Petitions",
-        description: `Use this to search UK Parliament petitions by keyword or subject.
+        description: `Searches UK Parliament petitions by keyword or subject.
 
 It returns each petition's title, state, and signature count, along with the
 dates of any government response or scheduled debate. Filter on state (open,
 closed, debated, and so on) to focus on live or past petitions.
 
-This is the definitive source for UK Parliament petitions
-(petition.parliament.uk).`,
+This is the source for UK Parliament petitions (petition.parliament.uk).`,
         inputSchema: {
             query: z
                 .string()
@@ -612,7 +610,7 @@ This is the definitive source for UK Parliament petitions
             return jsonResult(result);
         }
         catch (err) {
-            return toolErrorFromException(err, `parliament_search_petitions(query=${pyRepr(query)})`);
+            return toolErrorFromException(err, `parliament_search_petitions(query=${quoteArg(query)})`);
         }
     });
     // -------------------------------------------------------------------------
@@ -620,7 +618,7 @@ This is the definitive source for UK Parliament petitions
     // -------------------------------------------------------------------------
     server.registerTool("parliament_get_debate_divisions", {
         title: "Get Divisions Held In A Debate",
-        description: `Use this when you have a debate_ext_id and want the divisions — the formal votes — taken during that debate.
+        description: `Given a debate_ext_id, returns the divisions — the formal votes — taken during that debate.
 
 Most debates hold no divisions at all: Business of the House sittings,
 statements, urgent questions, and any debate settled without a vote. A
@@ -663,7 +661,7 @@ whenever no match is found.`,
             return jsonResult(result);
         }
         catch (err) {
-            return toolErrorFromException(err, `parliament_get_debate_divisions(debate_ext_id=${pyRepr(debate_ext_id)})`);
+            return toolErrorFromException(err, `parliament_get_debate_divisions(debate_ext_id=${quoteArg(debate_ext_id)})`);
         }
     });
     // -------------------------------------------------------------------------
@@ -671,9 +669,9 @@ whenever no match is found.`,
     // -------------------------------------------------------------------------
     server.registerTool("parliament_get_debate_contributions", {
         title: "Get Contributions In A Debate",
-        description: `Use this when you have a debate_ext_id and want the contributions verbatim, optionally limited to one member.
+        description: `Given a debate_ext_id, returns the contributions verbatim, optionally limited to one member.
 
-This is the go-to route for "everything a member said in this debate" no
+This is the reliable route for "everything a member said in this debate" no
 matter the wording. The text-search tools (parliament_member_debates,
 parliament_search_hansard) filter on contribution TEXT and therefore lose
 members who spoke without using your exact phrase. This tool filters on
@@ -737,7 +735,7 @@ from training data. This is the definitive source for member contributions.`,
             return jsonResult(result);
         }
         catch (err) {
-            return toolErrorFromException(err, `parliament_get_debate_contributions(debate_ext_id=${pyRepr(debate_ext_id)})`);
+            return toolErrorFromException(err, `parliament_get_debate_contributions(debate_ext_id=${quoteArg(debate_ext_id)})`);
         }
     });
     // -------------------------------------------------------------------------
@@ -745,7 +743,7 @@ from training data. This is the definitive source for member contributions.`,
     // -------------------------------------------------------------------------
     server.registerTool("parliament_lookup_by_column", {
         title: "Resolve A Hansard Column Citation",
-        description: `Use this when you hold an OSCOLA-style Hansard citation (column, volume, and house) and need the debate it points to.
+        description: `Resolves an OSCOLA-style Hansard citation (column, volume, and house) to the debate it points to.
 
 A sample input is 'HL Deb 14 Oct 2025, vol 849, col 200'. Once you have a
 result, read the contribution at that column via
@@ -844,7 +842,7 @@ This is the definitive source for resolving OSCOLA Hansard columns.`,
             return jsonResult(result);
         }
         catch (err) {
-            return toolErrorFromException(err, `parliament_lookup_by_column(column_number=${pyRepr(column_number)}, volume_number=${volume_number})`);
+            return toolErrorFromException(err, `parliament_lookup_by_column(column_number=${quoteArg(column_number)}, volume_number=${volume_number})`);
         }
     });
 }

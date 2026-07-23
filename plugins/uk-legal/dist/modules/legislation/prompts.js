@@ -1,18 +1,17 @@
 /**
- * Prompt templates for the legislation module.
+ * Prompt definitions for the legislation module.
  *
- * Arguments come in from the wire as strings, so year and number are converted
- * to numbers here. Each prompt is registered under a module-prefixed name on
- * the flat server.
+ * Arguments arrive from the wire as strings, so year and number are coerced to
+ * numbers here. Each prompt is registered under a module-prefixed name on the
+ * flat server.
  */
 import { z } from "zod";
 export function registerPrompts(server, _deps) {
     server.registerPrompt("legislation_summarise_act", {
         title: "Summarise a UK Act or Statutory Instrument",
-        description: "Write a summary of a UK Act of Parliament or Statutory Instrument.\n\n" +
-            "Yields a structured legal overview that walks through the purpose, the " +
-            "main definitions, the operative provisions, the territorial extent, and " +
-            "the commencement position.",
+        description: "Generate a structured overview of a single UK Act or Statutory " +
+            "Instrument: what it is for, the terms it defines, what it enacts, where " +
+            "it applies, and whether it is yet in force.",
         argsSchema: {
             type: z.string(),
             year: z.string(),
@@ -22,26 +21,27 @@ export function registerPrompts(server, _deps) {
         const type = args.type;
         const year = Number(args.year);
         const number = Number(args.number);
-        const text = `Act as a UK legal analyst and summarise ${type}/${year}/${number}.\n\n` +
-            `Step 1: Fetch the table of contents by calling legislation_get_toc with ` +
-            `type='${type}', year=${year}, number=${number}, and use it to get a feel for the structure.\n\n` +
-            `Step 2: Pull the sections that carry the most weight with legislation_get_section — ` +
-            `usually the definitions, the core operative provisions, and whatever governs enforcement.\n\n` +
-            `Step 3: Write up a structured summary that addresses:\n` +
-            `  (1) Purpose and scope — what is this legislation trying to fix?\n` +
-            `  (2) Key definitions — the defined terms that shape how it is read\n` +
-            `  (3) Main operative provisions — what it mandates, forbids, or allows\n` +
-            `  (4) Territorial extent — the jurisdictions it reaches\n` +
-            `  (5) Commencement status — wholly in force, partly commenced, or still prospective?\n\n` +
-            `Back up every point with the relevant section number, ` +
-            `and call out anything tagged 'prospective' or not yet in force.`;
+        const text = `You are acting as a UK legal analyst. Summarise ${type}/${year}/${number}.\n\n` +
+            `Begin by retrieving the table of contents with legislation_get_toc ` +
+            `(type='${type}', year=${year}, number=${number}) to map the structure, then use ` +
+            `legislation_get_section to pull the sections that carry the substance — typically the ` +
+            `interpretation/definitions section, the principal operative provisions, and anything ` +
+            `dealing with enforcement.\n\n` +
+            `Frame the summary around five questions:\n` +
+            `  • What is the legislation for — the mischief it addresses and how far it reaches?\n` +
+            `  • Which defined terms govern how it is to be read?\n` +
+            `  • What does it actually do — the duties, prohibitions, and powers it creates?\n` +
+            `  • How far does it extend territorially?\n` +
+            `  • Where does commencement stand — fully in force, partly commenced, or prospective?\n\n` +
+            `Cite the section number behind every point, and single out anything marked ` +
+            `prospective or not yet in force.`;
         return { messages: [{ role: "user", content: { type: "text", text } }] };
     });
     server.registerPrompt("legislation_compare_legislation", {
         title: "Compare two pieces of UK legislation",
-        description: "Set two pieces of UK legislation side by side on a chosen topic.\n\n" +
-            "Handy for weighing an original Act against an amending SI, or for lining up " +
-            "parallel provisions in different jurisdictions such as England and Scotland.",
+        description: "Place two pieces of UK legislation side by side on one topic — for " +
+            "example an original Act against the SI that amends it, or equivalent " +
+            "provisions in different jurisdictions such as England and Scotland.",
         argsSchema: {
             type1: z.string(),
             year1: z.string(),
@@ -59,17 +59,14 @@ export function registerPrompts(server, _deps) {
         const year2 = Number(args.year2);
         const number2 = Number(args.number2);
         const topic = args.topic;
-        const text = `Compare ${type1}/${year1}/${number1} with ${type2}/${year2}/${number2}, ` +
-            `focusing specifically on '${topic}'.\n\n` +
-            `Work through each piece of legislation:\n` +
-            `  1. Call legislation_get_toc to spot the sections that matter\n` +
-            `  2. Call legislation_get_section to pull those sections\n\n` +
-            `Then lay out a side-by-side analysis covering:\n` +
-            `  - Where the two take a similar approach\n` +
-            `  - Where they diverge in a meaningful way (definitions, thresholds, scope, enforcement)\n` +
-            `  - Any difference in territorial extent\n` +
-            `  - Which regime is stricter, and on which points\n` +
-            `  - What this means in practice for compliance`;
+        const text = `Set ${type1}/${year1}/${number1} against ${type2}/${year2}/${number2} ` +
+            `on the topic of '${topic}'.\n\n` +
+            `For each instrument in turn, call legislation_get_toc to locate the sections that bear ` +
+            `on '${topic}', then legislation_get_section to read them.\n\n` +
+            `Present the result as a side-by-side analysis that draws out where the two align; where ` +
+            `they genuinely differ (in definitions, thresholds, scope, or enforcement); any divergence ` +
+            `in territorial extent; which regime is the more stringent and on what points; and what ` +
+            `the differences mean in practice for compliance.`;
         return { messages: [{ role: "user", content: { type: "text", text } }] };
     });
 }

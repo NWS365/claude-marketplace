@@ -12,51 +12,49 @@ import { assertOk } from "../../shared/http.js";
 import { withTitle, READ_ONLY_OPEN } from "../../shared/annotations.js";
 import { TTL } from "../../shared/cache.js";
 import { LEGISLATION_BASE, normaliseSectionId, parseSearchAtom, parseClmlSection, parseHtmlSection, parseTocXml, reprStr, } from "./parsers.js";
-const SEARCH_DESC = `REACH FOR THIS TOOL to locate UK Acts and Statutory Instruments — by their title, by a phrase, or across their full text.
+const SEARCH_DESC = `Finds UK Acts and Statutory Instruments — by title, by phrase, or across their full text.
 
-Each hit comes back ranked and carries a title, type, year, number, the
-legislation.gov.uk URL, plus next_steps pointers (a toc URI and a section
-template). Once you have a match, follow it into legislation_get_toc and then
-legislation_get_section to drill into the structure.
+Results are ranked and each carries a title, type, year, number, the
+legislation.gov.uk URL, and next_steps pointers (a toc URI and a section
+template). Follow a match into legislation_get_toc and then
+legislation_get_section to work through the structure.
 
-Be disciplined with the filters. Both \`type\` and \`year\` match exactly, so
-only supply them when the value is genuinely known. When the search is driven
-by how recent something is ("the recent Renters' Rights Act"), search on the
-phrase on its own and pick the year out of the results — a guessed year that
-turns out wrong empties the result set entirely. To range across the body of
-legislation rather than titles, turn on \`fulltext=True\`.
+Use the filters sparingly. \`type\` and \`year\` both match exactly, so supply
+them only when the value is genuinely known — a guessed year that turns out
+wrong empties the results. When recency is the cue ("the recent Renters' Rights
+Act"), search the phrase alone and read the year off the results. Set
+\`fulltext=True\` to range across the body of legislation rather than titles.
 
 This is the authoritative feed for UK primary and secondary legislation
 (legislation.gov.uk).`;
-const GET_SECTION_DESC = `REACH FOR THIS TOOL once you have identified an Act or SI and need the parsed wording of one specific section, together with its extent and in-force metadata.
+const GET_SECTION_DESC = `Returns the parsed wording of one section of an identified Act or SI, with its extent and in-force metadata.
 
-The response carries the full section text, its territorial extent, whether it
-is in force, and a prospective flag. The text is limited by max_chars (default
-10,000, roughly 2,500 tokens); bump this up for the rare definition section
-that runs long, and consult content_truncated to see whether anything was cut.
+The response gives the full section text, its territorial extent, whether it is
+in force, and a prospective flag. Text is capped by max_chars (default 10,000,
+about 2,500 tokens); raise it for the occasional long definition section, and
+check content_truncated to see whether anything was cut.
 
-Never skip \`extent\`. A provision can be live in England & Wales yet have no
-application in Scotland or Northern Ireland, and quoting a section without
-verifying its extent is a mistake that comes up again and again in legal
-research.
+Always read \`extent\`. A provision can be live in England & Wales yet not apply
+in Scotland or Northern Ireland, and quoting a section without checking its
+extent is a recurring error in legal research.
 
-If instead you want the untouched CLML XML, call
+For the raw CLML XML instead, call
 read_resource(uri="legislation://{type}/{year}/{number}/section/{section}").
-Use this tool when the parsed, structured form is what you are after.`;
-const GET_TOC_DESC = `REACH FOR THIS TOOL once you know which Act or SI you want and need its structural table of contents — parts, chapters, sections, schedules.
+Reach for this tool when you want the parsed, structured form.`;
+const GET_TOC_DESC = `Returns the structural table of contents for an Act or SI — parts, chapters, sections, and schedules.
 
-Every structural element comes back with its XML id and title, such as
-'section-47: Definitions'. When you then call legislation_get_section, feed it
-the numeric identifier only ('47', not 'section-47').
+Each element arrives with its XML id and title, such as 'section-47:
+Definitions'. When you call legislation_get_section next, pass only the numeric
+identifier ('47', not 'section-47').
 
-Long statutes — the Companies Act 2006 alone has many hundreds of entries —
-are served in pages through offset/limit, so watch has_more and total_items.
+Long statutes — the Companies Act 2006 runs to many hundreds of entries — are
+paged via offset/limit, so watch has_more and total_items.
 
-For the whole TOC in one go, call
+For the entire TOC at once, call
 read_resource(uri="legislation://{type}/{year}/{number}/toc"), which returns a
-newline-separated \`id: title\` string with no paging. Prefer this tool when
-you want the structured response and its offset / limit / has_more fields to
-walk through a large statute a page at a time.`;
+newline-separated \`id: title\` string with no paging. Prefer this tool when you
+want the structured response and its offset / limit / has_more fields to page
+through a large statute.`;
 export function registerTools(server, deps) {
     server.registerTool("legislation_search", {
         title: "Search UK Legislation",

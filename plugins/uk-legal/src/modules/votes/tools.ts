@@ -79,20 +79,21 @@ const getInputSchema = {
     .describe("The chamber in which this division took place."),
 } as const;
 
-const SEARCH_DESCRIPTION = `REACH FOR THIS TOOL to look up recorded Commons or Lords votes by subject, date range, or the member involved.
+const SEARCH_DESCRIPTION = `Finds recorded Commons or Lords votes by subject, date range, or the member involved.
 
-Each hit is a division summary carrying the title, date, tallies, and whether
-it carried. Once you have one, feed its division_id together with house to
-votes_get_division to retrieve the individual voter breakdown.
+Returns division summaries — title, date, tallies, and whether the motion
+carried. Take a division_id and its house from a result and pass both to
+votes_get_division for the individual voter breakdown.
 
-This is the definitive record of formal votes in the UK Parliament.`;
+Use this as the record of formal votes in the UK Parliament.`;
 
-const GET_DESCRIPTION = `REACH FOR THIS TOOL once you hold a division_id and its house and need to see how every member voted.
+const GET_DESCRIPTION = `Returns how every member voted in one division, given a division_id and its house.
 
-To stay within response size limits each side lists at most 100 voters, but the
-reported totals stay correct even when the lists are cut short. Feed it from
-votes_search_divisions, or from parliament_get_debate_divisions, which maps
-Hansard division references onto the votes-API division_ids.`;
+Each side lists up to 100 voters to stay within response-size limits; the
+reported totals remain accurate even where a list is truncated. Source the
+division_id from votes_search_divisions, or from
+parliament_get_debate_divisions, which maps Hansard division references onto
+votes-API division_ids.`;
 
 export function registerVotesTools(server: McpServer, deps: Deps): void {
   server.registerTool(

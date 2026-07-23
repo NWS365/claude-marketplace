@@ -50,7 +50,7 @@ const INSTRUCTIONS = [
 const ABOUT = {
     name: "uk-legal",
     version: VERSION,
-    origin: "Independent TypeScript implementation, part of the Smartr365 legal-plugins marketplace.",
+    origin: "Independent TypeScript implementation (Smartr365 legal-plugins marketplace); its MCP interface is designed to be compatible with the MIT-licensed uk-legal-mcp (© 2026 Paul Boucherat) and is not derived from its source code.",
     license: "Proprietary — © 2026 Smartr365. All rights reserved.",
     deployment: "stdio (Claude Code plugin)",
     upstreams: [

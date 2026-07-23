@@ -43,12 +43,12 @@ export function registerCommitteesTools(server: McpServer, deps: Deps): void {
     "committees_search_committees",
     {
       title: "Search Parliamentary Committees",
-      description: `Reach for this tool to look up or enumerate UK parliamentary select committees, filtering by name, chamber, or whether they are still sitting.
+      description: `Looks up or lists UK parliamentary select committees, filtered by name, chamber, or whether they are still sitting.
 
-Each result is a committee summary (ID, name, house, active flag). Once
-you hold a committee_id, feed it to committees_get_committee to see who
-currently sits on the committee, or to committees_search_evidence to pull
-the oral and written evidence submitted to it.`,
+Each result is a committee summary (ID, name, house, active flag). With a
+committee_id in hand, pass it to committees_get_committee for the current
+membership, or to committees_search_evidence for the oral and written evidence
+submitted to it.`,
       inputSchema: {
         query: z
           .string()
@@ -118,12 +118,11 @@ the oral and written evidence submitted to it.`,
     "committees_get_committee",
     {
       title: "Get Committee Detail",
-      description: `Use this once you hold a committee_id and need the committee's metadata together with who currently serves on it.
+      description: `Returns a committee's metadata together with its current membership, given a committee_id.
 
-The committee record and its roster are retrieved concurrently.
-Afterwards, hand the committee_id to committees_search_evidence to find
-out which submissions have been made to the committee and on which
-subjects.`,
+The committee record and its roster are fetched concurrently. Next, hand the
+committee_id to committees_search_evidence to see which submissions have been
+made and on what subjects.`,
       inputSchema: {
         committee_id: z
           .number()
@@ -173,15 +172,14 @@ subjects.`,
     "committees_search_evidence",
     {
       title: "Search Committee Evidence",
-      description: `Turn to this tool when you have a committee_id and want the oral and written evidence lodged with that committee.
+      description: `Returns the oral and written evidence lodged with a committee, given a committee_id.
 
-A single page comes back per call (20 items by default). Long titles are
-trimmed to max_title_chars, and each item lists at most 10 witnesses.
-Where a committee has received a great deal of material, page through it
-by calling again with offset=offset+returned for as long as has_more
-stays true.
+One page comes back per call (20 items by default). Long titles are trimmed to
+max_title_chars, and each item lists up to 10 witnesses. Where a committee has
+received a lot of material, page through it by calling again with
+offset=offset+returned while has_more stays true.
 
-This is the definitive record of evidence given to parliamentary committees.`,
+Use this as the record of evidence given to parliamentary committees.`,
       inputSchema: {
         committee_id: z
           .number()
