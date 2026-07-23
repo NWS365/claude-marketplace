@@ -88,7 +88,7 @@ submitted to it.`,
             return jsonResult(result);
         }
         catch (err) {
-            const queryRepr = query === undefined ? "None" : `'${query}'`;
+            const queryRepr = query === undefined ? "null" : `'${query}'`;
             return toolErrorFromException(err, `committees_search_committees(query=${queryRepr})`);
         }
     });

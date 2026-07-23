@@ -261,14 +261,14 @@ describe("committees_search_committees", () => {
     expect(out.committees).toEqual([]);
   });
 
-  it("surfaces an upstream error with query=None in attempted", async () => {
+  it("surfaces an upstream error with query=null in attempted", async () => {
     const jsonGet = vi.fn(async () => fetched("boom", { status: 500, ok: false }));
     const reg = registerModule(registerCommittees, { jsonGet });
     const r = await callTool(reg, "committees_search_committees", {});
     expect(isErr(r)).toBe(true);
     const p = resultJson(r);
     expect(p.error_category).toBe("unknown"); // 500 → unknown per taxonomy
-    expect(p.attempted).toBe("committees_search_committees(query=None)");
+    expect(p.attempted).toBe("committees_search_committees(query=null)");
   });
 
   it("surfaces an upstream error with the quoted query in attempted (429 transient)", async () => {

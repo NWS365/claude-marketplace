@@ -14,7 +14,7 @@ import { asDict, detailDate, detailTitle, detailUrl, firstOf, MAX_VOTERS_PER_SID
 /** Quote a scalar for the `attempted` error breadcrumb. */
 function quoteArg(v) {
     if (v === undefined || v === null)
-        return "None";
+        return "null";
     if (typeof v === "string")
         return `'${v}'`;
     return String(v);

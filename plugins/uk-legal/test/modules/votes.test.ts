@@ -296,7 +296,7 @@ describe("votes_search_divisions", () => {
     const r = await callTool(reg, "votes_search_divisions", { house: "Commons", offset: 0, limit: 25 });
     expect(isErr(r)).toBe(true);
     expect(resultJson(r)).toMatchObject({ error_category: "transient", is_retryable: true });
-    expect(resultJson(r).attempted).toContain("query=None");
+    expect(resultJson(r).attempted).toContain("query=null");
   });
 });
 

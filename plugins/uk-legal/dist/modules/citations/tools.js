@@ -17,11 +17,9 @@ import { AMBIGUOUS_COURTS, buildOscola, compilePatterns, extractAllCitations, re
 /** Quote a scalar for the `attempted` error breadcrumb. */
 function quoteArg(v) {
     if (v === undefined || v === null)
-        return "None";
+        return "null";
     if (typeof v === "string")
         return `'${v}'`;
-    if (typeof v === "boolean")
-        return v ? "True" : "False";
     return String(v);
 }
 /** Thrown once the TNA HEAD check has spent its single retry and is still failing. */

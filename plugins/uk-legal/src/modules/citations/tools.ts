@@ -28,9 +28,8 @@ import {
 
 /** Quote a scalar for the `attempted` error breadcrumb. */
 function quoteArg(v: unknown): string {
-  if (v === undefined || v === null) return "None";
+  if (v === undefined || v === null) return "null";
   if (typeof v === "string") return `'${v}'`;
-  if (typeof v === "boolean") return v ? "True" : "False";
   return String(v);
 }
 
