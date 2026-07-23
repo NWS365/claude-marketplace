@@ -1,14 +1,22 @@
-# uk-legal (TypeScript)
+<div align="center">
+
+# 🏛️ uk-legal
+
+**A compliance-controlled TypeScript MCP server for UK legal research.**
 
 [![Build](https://img.shields.io/badge/build-passing-brightgreen?style=flat-square&logo=typescript&logoColor=white)](#develop)
 [![Tests](https://img.shields.io/badge/tests-330%20passing-brightgreen?style=flat-square&logo=vitest&logoColor=white)](#tests)
 [![Coverage](https://img.shields.io/badge/coverage-99%25%20lines-brightgreen?style=flat-square)](#tests)
 [![MCP SDK](https://img.shields.io/badge/MCP%20SDK-1.29-8A2BE2?style=flat-square&logo=anthropic&logoColor=white)](https://github.com/modelcontextprotocol)
-[![License](https://img.shields.io/badge/license-Proprietary-red?style=flat-square)](./NOTICE)
+[![License](https://img.shields.io/badge/license-Proprietary-red?style=flat-square)](#disclaimer)
+
+</div>
+
+---
 
 A **compliance-controlled** TypeScript MCP server for UK legal research — case law, legislation, Parliament/Hansard, bills, votes, committees, OSCOLA citations, and HMRC guidance. It returns **primary sources with citation metadata** so an agent can build evidence packs you can check and footnote. It does not interpret the law.
 
-> **Not legal advice.** Informational/preparatory use only. Verify all citations and have output reviewed by a qualified solicitor or barrister.
+> **Not legal advice.** Informational/preparatory use only. Verify all citations and have output reviewed by a qualified solicitor or barrister before relying on it.
 
 It is an independent TypeScript implementation built on `@modelcontextprotocol/sdk`, so we own and govern the code and data paths end to end. Proprietary — © 2026 Smartr365; see `NOTICE`.
 
@@ -78,3 +86,7 @@ Thresholds are enforced in `vitest.config.ts` to guard against regression.
 - XML is parsed with `@xmldom/xmldom` + `xpath` (namespace-aware), behind a DTD/ENTITY-rejecting safe parser.
 - A uniform response envelope, a fixed error taxonomy, and per-endpoint caching (1h/24h/90d) apply across every module; JSON keys are snake_case with exact enum literals for stable, checkable output.
 - Architecture: a single flat `McpServer` over stdio — no HTTP, metrics, or hosting layer, none of which a stdio plugin server needs.
+
+## Disclaimer
+
+This plugin returns **primary sources and citation metadata only** — it does not interpret the law and is not legal advice. Verify all citations and have output reviewed by a qualified, jurisdictionally-licensed solicitor or barrister before relying on it. Proprietary — © 2026 Smartr365; see `NOTICE`.

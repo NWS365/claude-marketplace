@@ -1,12 +1,12 @@
 ---
 name: Legal Debate
-description: This skill should be used when the user asks to "debate this legal question", "evaluate legal strategies", "argue both sides", "compare legal positions", "what's the strongest argument", "moot this", "stress test this argument", "assess litigation risk", "which clause approach is safer", "appeal this outcome", "how do I win this position", or needs multiple perspectives on a legal problem. Spawns a dynamic team of agents that argue competing legal positions, then debate to find the strongest approach, with optional appeal and case-strengthening stages.
-version: 0.2.0
+description: This skill should be used when the user asks to "debate this legal question", "evaluate legal strategies", "argue both sides", "compare legal positions", "what's the strongest argument", "moot this", "stress test this argument", "assess litigation risk", "which clause approach is safer", "appeal this outcome", "how do I win this position", or needs multiple perspectives on a legal problem. Also use it when the user supplies evidence to work through before arguing — "digest these documents", "extract the key facts from this bundle", "prepare this evidence for a debate" — which triggers an evidence pre-processing step first. Spawns a dynamic team of agents that argue competing legal positions, then debate to find the strongest approach, with optional appeal and case-strengthening stages.
+version: 0.3.0
 ---
 
 # Legal Debate Skill
 
-> **ANNOUNCE ON INVOCATION:** When this skill is loaded, immediately tell the user: "Using legal-debate skill — analysing the question to prepare an agent debate."
+> **ANNOUNCE ON INVOCATION:** When this skill is loaded, immediately tell the user: "Using legal-debate skill — analysing the question to prepare an agent debate." If evidence has been supplied, say instead: "Using legal-debate skill — I'll digest the evidence into a structured record first, then pause for you to `/clear` before the debate."
 
 > **NOT LEGAL ADVICE:** This skill produces structured argument analysis for informational and preparatory purposes only. It is not legal advice and does not create a lawyer–client relationship. Outputs must be reviewed by a qualified, jurisdictionally-licensed attorney before being relied upon. Surface this disclaimer in the final output.
 
@@ -20,6 +20,10 @@ This skill targets **legal reasoning problems** — litigation and dispute strat
 
 ## Invariants
 
+- **ALWAYS**, when the question is supplied with **evidence** (contracts, correspondence, pleadings, witness statements, exhibit bundles, transcripts, long pasted text, or attached files), run **Phase 0 (Evidence pre-processing)** *first* — read the evidence and distil it into a structured, greppable digest file before any debate work
+- **ALWAYS**, after producing the digest, **stop and prompt the human to run `/clear` and then start the debate** — the digest is a file that survives the reset; **NEVER** continue from Phase 0 into the debate in the same context (the `/clear` is what keeps the raw evidence out of the debate)
+- **NEVER** decide, weigh, or resolve any legal issue in the digest — Phase 0 is **extraction only**; it records facts and *flags* issues, the debate decides them
+- **ALWAYS**, once a debate begins with a digest available, treat the digest as the **factual record** and have advocates **grep it and cite facts by ID** rather than re-ingesting the raw evidence
 - **ALWAYS** choose the **debate shape** before agent count — *proposition* (agents argue a single yes/no question for and against) or *strategy-selection* (agents argue distinct competing approaches)
 - **ALWAYS** assess problem complexity before choosing agent count
 - **NEVER** spawn more than 5 agents — diminishing returns beyond this
@@ -52,7 +56,22 @@ If the `uk-legal` tools are unavailable, tell the user to install the `uk-legal`
 
 ## Workflow
 
+### Phase 0: Evidence pre-processing (when evidence is supplied)
+
+**Trigger:** the question arrives with factual material to work from — one or more contracts, letters/emails, pleadings, witness statements, exhibit bundles, transcripts, attached files, or a substantial block of pasted facts. A bare legal question with no supporting material skips straight to Phase 1.
+
+Before any debate, read the evidence **once** and distil it into a single **structured, greppable digest file**. This is the subject-matter pre-processing step: the digest — not the raw evidence — grounds the debate after a context reset.
+
+1. **Read all supplied evidence thoroughly.**
+2. **Extract a digest** to `legal-evidence-digest-{matter-slug}.md` in the current working directory, following the schema in `references/evidence-digest.md`: matter summary, parties, documents index, chronology, agreed/disputed facts, key terms (verbatim), admissions, authorities cited in the evidence, spotted legal issues, and gaps. Every fact carries a stable ID, literal bracketed tags, ISO dates, and a `Source:` locator so an LLM or `grep` can pull exactly what it needs later.
+3. **Extraction only** — record what the evidence says and *flag* the legal issues it raises; decide nothing.
+4. **Stop and hand off.** Present the handoff prompt (see `references/evidence-digest.md`): report what was captured, then instruct the human to **run `/clear`** and restart the debate referencing the digest file. **Do not proceed into Phase 1 in this context** — the digest file carries the facts across the reset.
+
+Phase 1 onward then runs in the fresh, post-`/clear` context, loading the digest as its factual record.
+
 ### Phase 1: Problem Analysis
+
+**If an evidence digest exists** (Phase 0 was run, or the user points at a `*evidence-digest*.md` file — glob the working directory and, if several match, ask which matter): load it first and treat it as the **factual record**. Draw the problem classification, jurisdiction, and candidate positions from the digest's *Matter summary* and *Spotted legal issues*; do not re-ingest the raw evidence. Carry each `[AUTHORITY][TO-VERIFY]` entry forward for verification during the debate. Then continue with the analysis below.
 
 Analyse the user's problem statement to determine:
 
@@ -81,6 +100,7 @@ Use `TeamCreate` to spawn the agent team. Each agent receives:
 - Its **assigned side** (for / against) or **distinct strategy**, per the debate shape
 - Its **advocate persona** — **King's Counsel (KC)**, or **Senior Counsel (SC)** where that title is used (see Phase 1). Instruct the agent to conduct itself as leading counsel: precise, authority-led, and candid about weaknesses in its own case.
 - The **original problem statement**, jurisdiction, and governing law for context
+- **If an evidence digest exists:** the digest **file path**, with instructions to treat it as the factual record, **grep it by fact ID / tag** for the facts it needs, and **cite facts by ID** (e.g. "per F014") in its submission — not to re-read raw evidence or invent facts beyond the digest (missing facts are in the digest's *Gaps & unknowns*)
 - Instructions to **build the strongest possible case** for its side/strategy
 - A directive to **anticipate opposing counsel's arguments** and pre-empt them
 - A directive to **ground every authority in the `uk-legal` MCP tools** (`case_law_search`/`judgment_get_paragraph`, `legislation_get_section` with `extent`/`in_force`, `parliament_search_hansard`) and to **verify each citation** through `citations_parse` → `citations_resolve` → `citations_format_oscola` before advancing it — see *Authority & verification*
@@ -210,6 +230,9 @@ This package is *advocacy preparation*, not advice — append the **NOT LEGAL AD
 ## Agent Communication Pattern
 
 ```
+Phase 0: Evidence → digest file → STOP, prompt /clear   (only if evidence supplied)
+    ── (human runs /clear, restarts debate referencing the digest) ──
+Phase 1: Load digest as factual record (if present)
 Phase 2: TeamCreate (parallel, independent development)
     counsel-1 ──develop──> position-1
     counsel-2 ──develop──> position-2
@@ -235,6 +258,7 @@ Choose 3-5 criteria relevant to the specific question. Weight by importance (x1 
 
 ## Reference Files
 
+- **`references/evidence-digest.md`** — Phase 0 mechanics: why the digest + `/clear` handoff, the greppability contract (stable headers, fact IDs, closed tag vocabulary, ISO dates, provenance), the digest template, the handoff prompt, and how the post-`/clear` debate picks the digest back up
 - **`references/debate-protocol.md`** — Detailed debate facilitation rules, round structure, citation hygiene, handling unproductive arguments, and edge cases
 - **`references/output-format.md`** — Comparison table template, criteria selection guidance, verdict format, and disclaimer text
 - **`references/appeals-and-strengthening.md`** — Mechanics for Phase 6 (grounds of appeal, standard of review, appellate panel, disposition) and Phase 7 (winning-package structure, partisan-vs-neutral framing, authority marshalling)

@@ -33,7 +33,7 @@ Then browse and install plugins with `/plugin`.
 |--------|----------|-------------|
 | [`uk-legal`](./plugins/uk-legal) | legal | TypeScript **MCP server** — UK case law, legislation, Parliament/Hansard, bills, votes, committees, OSCOLA citations, and HMRC guidance. Returns primary sources with citation metadata (**31 tools · 9 resources · 4 prompts**). |
 | [`legal-research`](./plugins/legal-research) | legal | Decision-tree guidance for grounding UK legal work in primary sources via the `uk-legal` MCP tools, with a mandatory citation-verification protocol. Companion to `uk-legal`. |
-| [`legal-debate`](./plugins/legal-debate) | legal | Multi-agent debate for legal problem-solving (England & Wales / Commonwealth silk systems) — King's Counsel argue a proposition for and against, or compare competing strategies, then produce a weighted comparison, a reasoned verdict, and optional appeal & case-strengthening stages. |
+| [`legal-debate`](./plugins/legal-debate) | legal | Multi-agent debate for legal problem-solving (England & Wales / Commonwealth silk systems) — digests supplied evidence into a greppable fact record, then King's Counsel argue a proposition for and against, or compare competing strategies, and produce a weighted comparison, a reasoned verdict, and optional appeal & case-strengthening stages. |
 
 > `legal-debate` and `legal-research` are strongest when `uk-legal` is installed —
 > they direct their advocates and researchers to verify every authority against

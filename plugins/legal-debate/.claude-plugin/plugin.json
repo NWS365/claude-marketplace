@@ -1,7 +1,7 @@
 {
   "name": "legal-debate",
-  "version": "0.1.0",
-  "description": "Structured multi-agent debate for legal problem-solving (England & Wales / Commonwealth silk systems) — King's Counsel argue a proposition for and against, or develop competing strategies, then produce a weighted comparison and reasoned verdict",
+  "version": "0.3.0",
+  "description": "Structured multi-agent debate for legal problem-solving (England & Wales / Commonwealth silk systems) — digests supplied evidence into a greppable fact record, then King's Counsel argue a proposition for and against, or develop competing strategies, and produce a weighted comparison and reasoned verdict",
   "author": {
     "name": "Nicholas Wentworth-Shaw",
     "email": "nick.shaw@smartr365.com"
@@ -13,6 +13,7 @@
     "england-wales",
     "commonwealth",
     "litigation-strategy",
+    "evidence-digest",
     "contract",
     "statutory-interpretation",
     "risk-assessment",
