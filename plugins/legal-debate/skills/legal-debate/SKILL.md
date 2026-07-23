@@ -18,6 +18,8 @@ This skill targets **legal reasoning problems** — litigation and dispute strat
 
 **Jurisdictional scope:** this skill is tailored to **England & Wales and Commonwealth silk systems** (jurisdictions that appoint King's Counsel / Senior Counsel). Its advocate personas, terminology, and authority conventions assume that setting. If a question is governed by a non-silk jurisdiction's law (e.g. a US state), flag that it falls outside the skill's tailoring before proceeding.
 
+**Practice profile (optional):** at the start, read `~/.claude/uk-legal-profile.md` if it exists. Use its `default_jurisdiction` as the assumed governing law when the question does not state one, and its `citation_style` (default OSCOLA) when formatting authorities. If `silk_system` is `false` or the jurisdiction is non-silk, apply the non-silk flag above before spawning advocates. If the file is absent, use the England & Wales / silk defaults — do not block on it. The profile is written by the `uk-legal-setup` skill.
+
 ## Invariants
 
 - **ALWAYS**, when the question is supplied with **evidence** (contracts, correspondence, pleadings, witness statements, exhibit bundles, transcripts, long pasted text, or attached files), run **Phase 0 (Evidence pre-processing)** *first* — read the evidence and distil it into a structured, greppable digest file before any debate work

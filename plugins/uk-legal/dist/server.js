@@ -3,7 +3,7 @@
  * uk-legal (TypeScript) — a single flat McpServer served over stdio.
  *
  * Exposes the full client-facing surface for UK legal research: the tools of
- * eight modules (registered under namespaced wire names), three judgment
+ * twelve modules (registered under namespaced wire names), three judgment
  * companion tools, the judgment:// / legislation:// / hansard:// resource
  * templates, the server://about static resource, and four prompts. There is
  * deliberately no HTTP, metrics, or hosting layer — this is a stdio plugin
@@ -22,6 +22,10 @@ import { registerVotes } from "./modules/votes/index.js";
 import { registerCommittees } from "./modules/committees/index.js";
 import { registerCitations } from "./modules/citations/index.js";
 import { registerHmrc } from "./modules/hmrc/index.js";
+import { registerCompaniesHouse } from "./modules/companiesHouse/index.js";
+import { registerGazette } from "./modules/gazette/index.js";
+import { registerEurlex } from "./modules/eurlex/index.js";
+import { registerEpoOps } from "./modules/epoOps/index.js";
 const VERSION = "0.1.0";
 // Client-visible guidance surfaced at initialize; load-bearing for tool routing.
 const INSTRUCTIONS = [
@@ -36,7 +40,7 @@ const INSTRUCTIONS = [
     "Every response is drawn straight from an official source and carries citation ",
     "metadata. The server does not read the law, take a position, or dictate a research ",
     "method — the calling agent decides what to do with what it retrieves.\n\n",
-    "The surface is split into eight namespaced modules; choose by subject:\n",
+    "The surface is split into twelve namespaced modules; choose by subject:\n",
     "• case_law — judgments of the UK courts (TNA Find Case Law), plus resources for judgment text.\n",
     "• legislation — primary Acts and secondary Statutory Instruments.\n",
     "• parliament — Hansard search, division chains, column-reference lookup, and member records.\n",
@@ -44,7 +48,11 @@ const INSTRUCTIONS = [
     "• votes — division records from the Commons and the Lords.\n",
     "• committees — select committees, their membership, and submitted evidence.\n",
     "• citations — parsing and resolving OSCOLA references (no API key needed).\n",
-    "• hmrc — UK VAT rates, Making Tax Digital status, and HMRC guidance.\n\n",
+    "• hmrc — UK VAT rates, Making Tax Digital status, and HMRC guidance.\n",
+    "• companies_house — the UK companies register: company profiles, officers, and persons with significant control (needs COMPANIES_HOUSE_API_KEY).\n",
+    "• gazette — The Gazette, the UK official public record: insolvency, corporate, personal, and probate notices.\n",
+    "• eurlex — EU legal instruments by CELEX id via CELLAR, relevant to England & Wales as retained/assimilated EU law.\n",
+    "• epo_ops — European Patent Office register (incl. GB patents) for IP clearance and freedom-to-operate (needs EPO_OPS_CONSUMER_KEY/SECRET).\n\n",
     "Consult server://about for upstream endpoints and operational detail. Every tool is read-only.",
 ].join("");
 const ABOUT = {
@@ -62,6 +70,10 @@ const ABOUT = {
         { module: "committees", api: "committees-api.parliament.uk", auth: "none" },
         { module: "citations", api: "none (regex; optional client-side sampling, off by default)", auth: "n/a" },
         { module: "hmrc", api: "test-api.service.hmrc.gov.uk + gov.uk/api/search.json", auth: "OAuth 2.0 (sandbox by default)" },
+        { module: "companies_house", api: "api.company-information.service.gov.uk", auth: "HTTP Basic (COMPANIES_HOUSE_API_KEY)" },
+        { module: "gazette", api: "thegazette.co.uk (all-notices Atom feed)", auth: "none" },
+        { module: "eurlex", api: "publications.europa.eu/webapi/rdf/sparql (CELLAR)", auth: "none" },
+        { module: "epo_ops", api: "ops.epo.org/3.2 (Open Patent Services)", auth: "OAuth 2.0 client-credentials (EPO_OPS_CONSUMER_KEY/SECRET)" },
     ],
     llm_posture: "this server runs no LLM of its own. All tool responses come directly from the named APIs, EXCEPT citations_parse with disambiguate=true (off by default), which asks the connected client's own model to resolve an ambiguous court division via MCP sampling.",
     no_data_retention: "no user query or response data is stored",
@@ -83,6 +95,10 @@ export function buildServer() {
     registerCommittees(server, deps);
     registerCitations(server, deps);
     registerHmrc(server, deps);
+    registerCompaniesHouse(server, deps);
+    registerGazette(server, deps);
+    registerEurlex(server, deps);
+    registerEpoOps(server, deps);
     server.registerResource("About this server", "server://about", { title: "About this server", description: "Provenance, upstream APIs, and operational posture.", mimeType: "application/json" }, async (uri) => ({ contents: [{ uri: uri.href, mimeType: "application/json", text: JSON.stringify(ABOUT, null, 2) }] }));
     return server;
 }

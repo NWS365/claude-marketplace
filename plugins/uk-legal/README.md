@@ -5,7 +5,7 @@
 **A compliance-controlled TypeScript MCP server for UK legal research.**
 
 [![Build](https://img.shields.io/badge/build-passing-brightgreen?style=flat-square&logo=typescript&logoColor=white)](#develop)
-[![Tests](https://img.shields.io/badge/tests-330%20passing-brightgreen?style=flat-square&logo=vitest&logoColor=white)](#tests)
+[![Tests](https://img.shields.io/badge/tests-426%20passing-brightgreen?style=flat-square&logo=vitest&logoColor=white)](#tests)
 [![Coverage](https://img.shields.io/badge/coverage-99%25%20lines-brightgreen?style=flat-square)](#tests)
 [![MCP SDK](https://img.shields.io/badge/MCP%20SDK-1.29-8A2BE2?style=flat-square&logo=anthropic&logoColor=white)](https://github.com/modelcontextprotocol)
 [![License](https://img.shields.io/badge/license-Proprietary-red?style=flat-square)](#disclaimer)
@@ -22,7 +22,7 @@ It is an independent TypeScript implementation built on `@modelcontextprotocol/s
 
 ## Surface
 
-**31 tools, 9 resources, 4 prompts** across 8 modules:
+**41 tools, 9 resources, 4 prompts** across 12 modules:
 
 | Module | Tools |
 |---|---|
@@ -34,6 +34,10 @@ It is an independent TypeScript implementation built on `@modelcontextprotocol/s
 | committees | `committees_search_committees`, `committees_get_committee`, `committees_search_evidence` |
 | citations | `citations_parse`, `citations_resolve`, `citations_network`, `citations_format_oscola` |
 | hmrc | `hmrc_get_vat_rate`, `hmrc_check_mtd_status`, `hmrc_search_guidance` |
+| companies_house | `companies_house_search`, `companies_house_get_company`, `companies_house_list_officers`, `companies_house_get_psc` |
+| gazette | `gazette_search_notices`, `gazette_get_notice` |
+| eurlex | `eurlex_search`, `eurlex_get_document` |
+| epo_ops | `epo_ops_search_patents`, `epo_ops_get_patent` |
 
 Resources: `judgment://{+slug}/header|index|para/{eId}`, `legislation://…/section/…{?date}`, `legislation://…/toc{?date}`, `hansard://debate/{debate_ext_id}/header|contribution/{contribution_ext_id}`, `hansard://member/{member_id}/biography`, `server://about`.
 Prompts: `legislation_summarise_act`, `legislation_compare_legislation`, `parliament_policy_reception_review`, `parliament_member_record_on_topic`.
@@ -48,14 +52,19 @@ The plugin ships a built `dist/` and declares the server in `.mcp.json` (stdio):
 { "mcpServers": { "uk-legal": { "command": "node", "args": ["${CLAUDE_PLUGIN_ROOT}/dist/server.js"] } } }
 ```
 
-Install the plugin from the `legal-plugins` marketplace; tools appear as `mcp__uk-legal__<tool>`. No API keys are needed for the legal sources.
+Install the plugin from the `legal-plugins` marketplace; tools appear as `mcp__uk-legal__<tool>`. The core research sources (case law, legislation, Parliament, bills, votes, committees, citations, The Gazette, EUR-Lex) need **no API keys**; three source families need free, registration-only credentials (see below) and are inert until configured.
 
 ## Configuration (optional)
 
-`hmrc_check_mtd_status` uses HMRC OAuth2 and is inert unless configured; it returns an `auth_required`/`configuration` result otherwise. Set:
+**Guided setup:** run the **`uk-legal-setup`** skill ("set up uk-legal", "add my API keys") — it captures a practice profile (jurisdiction, silk system, citation style → `~/.claude/uk-legal-profile.md`, read by `legal-research` and `legal-debate`) and walks you through registering for and setting the free keys below. The manual reference follows.
 
-- `HMRC_CLIENT_ID`, `HMRC_CLIENT_SECRET`
-- `HMRC_API_BASE` — defaults to the sandbox `https://test-api.service.hmrc.gov.uk`; set `https://api.service.hmrc.gov.uk` for production.
+Tools whose upstream needs credentials return a `configuration`/`auth_required` result until the relevant environment variables are set. All keys below are **free** (registration only).
+
+- **HMRC** (`hmrc_check_mtd_status`): `HMRC_CLIENT_ID`, `HMRC_CLIENT_SECRET`. `HMRC_API_BASE` defaults to the sandbox `https://test-api.service.hmrc.gov.uk`; set `https://api.service.hmrc.gov.uk` for production.
+- **Companies House** (`companies_house_*`): `COMPANIES_HOUSE_API_KEY` (free from developer.company-information.service.gov.uk). `COMPANIES_HOUSE_API_BASE` optional.
+- **EPO OPS** (`epo_ops_*`): `EPO_OPS_CONSUMER_KEY`, `EPO_OPS_CONSUMER_SECRET` (free from developers.epo.org; 4 GB/week fair-use). `EPO_OPS_API_BASE` optional.
+
+The Gazette and EUR-Lex (CELLAR SPARQL) are fully keyless.
 
 ## Develop
 
@@ -63,7 +72,7 @@ Install the plugin from the `legal-plugins` marketplace; tools appear as `mcp__u
 npm install          # deps: @modelcontextprotocol/sdk, zod, @xmldom/xmldom, xpath, impit
 npm run typecheck    # tsc --noEmit
 npm run build        # tsc → dist/
-npm run verify       # spawn dist/server.js over stdio; assert 31 tools / 8 templates / 1 static / 4 prompts + an offline citations_parse call
+npm run verify       # spawn dist/server.js over stdio; assert 41 tools / 8 templates / 1 static / 4 prompts + an offline citations_parse call
 npm test             # vitest — full unit suite (no network; upstreams are stubbed)
 npm run test:coverage # vitest + v8 coverage (thresholds enforced)
 ```

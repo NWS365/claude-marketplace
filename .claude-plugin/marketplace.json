@@ -19,7 +19,7 @@
     },
     {
       "name": "uk-legal",
-      "description": "UK legal research MCP server (TypeScript) — case law, legislation, Parliament/Hansard, bills, votes, committees, OSCOLA citations, and HMRC guidance. Returns primary sources with citation metadata. Compliance-controlled reimplementation.",
+      "description": "UK legal research MCP server (TypeScript) — case law, legislation, Parliament/Hansard, bills, votes, committees, OSCOLA citations, HMRC guidance, the Companies House register, The Gazette official notices, EU/retained law (EUR-Lex), and EPO patents. Returns primary sources with citation metadata. Compliance-controlled reimplementation.",
       "author": {
         "name": "Nicholas Wentworth-Shaw",
         "email": "nick.shaw@smartr365.com"

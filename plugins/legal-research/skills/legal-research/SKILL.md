@@ -16,6 +16,10 @@ This skill tells you **exactly which tool to call** for a UK legal question, and
 
 The tools live in the **`uk-legal`** plugin's MCP server (server key `uk-legal`). In Claude Code they are exposed as `mcp__uk-legal__<tool>` (e.g. `mcp__uk-legal__case_law_search`). If they are not available, tell the user to install the `uk-legal` plugin from the `legal-plugins` marketplace and retry. Below, tools are named by their wire name (drop the `mcp__uk-legal__` prefix for readability).
 
+## Practice profile (optional)
+
+At the start, read `~/.claude/uk-legal-profile.md` if it exists. Apply its `default_jurisdiction` (assume it unless the question states otherwise) and `citation_style` (default OSCOLA). If the file is absent, behave as normal (England & Wales / OSCOLA defaults) — do **not** block on it. The profile is written by the `uk-legal-setup` skill; if the user asks to configure defaults or API keys, point them there.
+
 ## Invariants
 
 - **ALWAYS** prefer a uk-legal tool over training data or generic web search for any UK legal fact (case name, neutral citation, section number, commencement, Hansard column, division result, HMRC rate).

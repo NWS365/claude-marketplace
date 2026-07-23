@@ -32,6 +32,10 @@ const EXPECT_TOOLS = [
   "committees_search_committees", "committees_get_committee", "committees_search_evidence",
   "citations_parse", "citations_resolve", "citations_network", "citations_format_oscola",
   "hmrc_get_vat_rate", "hmrc_check_mtd_status", "hmrc_search_guidance",
+  "companies_house_search", "companies_house_get_company", "companies_house_list_officers", "companies_house_get_psc",
+  "gazette_search_notices", "gazette_get_notice",
+  "eurlex_search", "eurlex_get_document",
+  "epo_ops_search_patents", "epo_ops_get_patent",
   "judgment_get_header", "judgment_get_index", "judgment_get_paragraph",
 ];
 const EXPECT_TEMPLATES = [
@@ -61,7 +65,7 @@ afterAll(async () => {
 });
 
 describe("buildServer surface", () => {
-  it("registers exactly the expected 31 tools", async () => {
+  it("registers exactly the expected 41 tools", async () => {
     const tools = (await client.listTools()).tools.map((t) => t.name).sort();
     expect(tools).toEqual([...EXPECT_TOOLS].sort());
   });
@@ -86,7 +90,7 @@ describe("buildServer surface", () => {
     const about = JSON.parse((res.contents[0] as any).text);
     expect(about).toMatchObject({ name: "uk-legal", all_tools_read_only: true });
     expect(about.license).toMatch(/Proprietary/);
-    expect(about.upstreams.length).toBe(8);
+    expect(about.upstreams.length).toBe(12);
   });
 
   it("advertises server instructions on initialize", () => {
