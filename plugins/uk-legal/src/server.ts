@@ -63,7 +63,7 @@ const ABOUT = {
   name: "uk-legal",
   version: VERSION,
   origin:
-    "Independent TypeScript implementation (Smartr365 legal-plugins marketplace); its MCP interface is designed to be compatible with the MIT-licensed uk-legal-mcp (© 2026 Paul Boucherat) and is not derived from its source code.",
+    "Independent TypeScript implementation (Smartr365 legal-plugins marketplace). The OSCOLA citation patterns are compiled from primary sources (the neutral-citation Practice Direction, TNA Find Case Law, and OSCOLA 4th edn); no third-party server source is incorporated.",
   license: "Proprietary — © 2026 Smartr365. All rights reserved.",
   deployment: "stdio (Claude Code plugin)",
   upstreams: [

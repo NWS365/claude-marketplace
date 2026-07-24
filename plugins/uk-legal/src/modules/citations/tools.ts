@@ -21,8 +21,8 @@ import {
   buildOscola,
   compilePatterns,
   extractAllCitations,
+  normaliseDivision,
   resolveNeutralCitation,
-  titleCase,
   TNA_BASE,
 } from "./parsers.js";
 
@@ -78,7 +78,7 @@ async function disambiguateCitation(deps: Deps, citation: ParsedCitation): Promi
     const allowed = new Set(["KB", "CH", "COMM", "FAM", "PAT", "IPEC", "ADMIN", "TCC", "COSTS", "UNKNOWN"]);
     if (!allowed.has(division)) return citation;
     if (division === "UNKNOWN") return citation;
-    const newCourt = `${citation.court} (${titleCase(division)})`;
+    const newCourt = `${citation.court} (${normaliseDivision(division)})`;
     const newUrl =
       citation.year && citation.number
         ? resolveNeutralCitation(citation.year, newCourt, citation.number)

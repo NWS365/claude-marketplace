@@ -3,7 +3,7 @@ import { registerCitations } from "../../src/modules/citations/index.js";
 import { registerModule, callTool, resultJson, isErr, fetched } from "../_harness.js";
 import {
   compilePatterns,
-  titleCase,
+  normaliseDivision,
   courtIsAmbiguous,
   resolveNeutralCitation,
   resolveSi,
@@ -19,9 +19,17 @@ afterEach(() => vi.useRealTimers());
 
 // --------------------------------------------------------------- parsers (pure)
 describe("citations/parsers", () => {
-  it("titleCase upper-cases the first letter only", () => {
-    expect(titleCase("KB")).toBe("Kb");
-    expect(titleCase("comm")).toBe("Comm");
+  it("normaliseDivision keeps acronym divisions upper-cased and title-cases word divisions", () => {
+    // Acronyms must not be mangled (the old titleCase turned KB -> "Kb").
+    expect(normaliseDivision("kb")).toBe("KB");
+    expect(normaliseDivision("IPEC")).toBe("IPEC");
+    expect(normaliseDivision("tcc")).toBe("TCC");
+    expect(normaliseDivision("iac")).toBe("IAC");
+    // Word divisions title-case.
+    expect(normaliseDivision("comm")).toBe("Comm");
+    expect(normaliseDivision("ADMIN")).toBe("Admin");
+    // Unknown tokens fall back to upper-case.
+    expect(normaliseDivision("xyz")).toBe("XYZ");
   });
 
   it("courtIsAmbiguous flags bare EWHC/UKUT/UKFTT", () => {
@@ -46,6 +54,12 @@ describe("citations/parsers", () => {
     expect(buildOscola("neutral", 2024, "UKSC", 12, null, null, null, null, null, null, null, null)).toBe("[2024] UKSC 12");
     // unmapped court falls back to the raw key
     expect(buildOscola("neutral", 2024, "EWHC", 5, null, null, null, null, null, null, null, null)).toBe("[2024] EWHC 5");
+    // Parenthetical divisions follow the number in OSCOLA, and acronyms keep their case.
+    expect(buildOscola("neutral", 2024, "EWHC (KB)", 123, null, null, null, null, null, null, null, null)).toBe("[2024] EWHC 123 (KB)");
+    expect(buildOscola("neutral", 2024, "EWHC (CH)", 7, null, null, null, null, null, null, null, null)).toBe("[2024] EWHC 7 (Ch)");
+    expect(buildOscola("neutral", 2024, "UKUT (IAC)", 42, null, null, null, null, null, null, null, null)).toBe("[2024] UKUT 42 (IAC)");
+    // EWCA Civ/Crim is not parenthetical — division stays before the number.
+    expect(buildOscola("neutral", 2023, "EWCA CIV", 450, null, null, null, null, null, null, null, null)).toBe("[2023] EWCA Civ 450");
     expect(buildOscola("law_report", 2024, null, null, "WLR", 1, 100, null, null, null, null, null)).toBe("[2024] 1 WLR 100");
     expect(buildOscola("law_report", 2024, null, null, "AC", null, 55, null, null, null, null, null)).toBe("[2024] AC 55");
     expect(buildOscola("legislation", null, null, null, null, null, null, "Companies Act 2006", "47", null, null, null)).toBe("s.47 Companies Act 2006");
@@ -63,7 +77,19 @@ describe("citations/parsers", () => {
     expect(parseCitationFromMatch(ambiguous, "neutral")).toMatchObject({ court: "EWHC", confidence: 0.5, resolved_url: null });
 
     const withDivision = [...("[2024] EWHC 100 (KB)".matchAll(p.neutral))][0]!;
-    expect(parseCitationFromMatch(withDivision, "neutral")).toMatchObject({ court: "EWHC (Kb)", confidence: 1.0 });
+    expect(parseCitationFromMatch(withDivision, "neutral")).toMatchObject({
+      court: "EWHC (KB)",
+      confidence: 1.0,
+      resolved_url: `${TNA_BASE}/ewhc/kb/2024/100`,
+    });
+
+    // An unrecognised division does not resolve, so it is surfaced as ambiguous (0.5), not confident.
+    const badDivision = [...("[2024] EWHC 100 (Xyz)".matchAll(p.neutral))][0]!;
+    expect(parseCitationFromMatch(badDivision, "neutral")).toMatchObject({
+      court: "EWHC (XYZ)",
+      confidence: 0.5,
+      resolved_url: null,
+    });
 
     const report = [...("[2024] 1 WLR 100".matchAll(p.law_report))][0]!;
     expect(parseCitationFromMatch(report, "law_report")).toMatchObject({ report_series: "WLR", volume: 1, page: 100 });
@@ -86,6 +112,14 @@ describe("citations/parsers", () => {
     expect(confident.map((c) => c.type)).toEqual(expect.arrayContaining(["neutral", "legislation", "si"]));
     expect(ambiguous.some((c) => c.court === "EWHC")).toBe(true);
   });
+
+  it("does not match Scottish Court of Session codes (no Find Case Law resolver)", () => {
+    // CSOH/CSIH were dropped from the pattern: they cannot resolve against TNA,
+    // so recognising them would only yield confident-looking, unresolvable hits.
+    const [confident, ambiguous] = extractAllCitations("[2024] CSOH 12 and [2024] CSIH 3", compilePatterns());
+    expect(confident).toHaveLength(0);
+    expect(ambiguous).toHaveLength(0);
+  });
 });
 
 // --------------------------------------------------------------- citations_parse
@@ -105,7 +139,7 @@ describe("citations_parse", () => {
     const r = await callTool(reg, "citations_parse", { text: "[2024] EWHC 90", disambiguate: true });
     const out = resultJson(r);
     expect(out.ambiguous).toHaveLength(0);
-    expect(out.citations.some((c: any) => c.court === "EWHC (Kb)")).toBe(true);
+    expect(out.citations.some((c: any) => c.court === "EWHC (KB)")).toBe(true);
     expect(sample).toHaveBeenCalled();
   });
 

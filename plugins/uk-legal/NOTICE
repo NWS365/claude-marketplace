@@ -1,56 +1,29 @@
 uk-legal (TypeScript)
 =====================
 
-Copyright © 2026 Smartr365. All rights reserved in Smartr365's own original
-code and content.
+Copyright © 2026 Smartr365. All rights reserved.
 
 This software is PROPRIETARY and CONFIDENTIAL. No licence to use, copy, modify,
-distribute, or create derivative works in Smartr365's own contributions is
-granted except as separately agreed in writing with Smartr365. Portions
-incorporated or adapted from uk-legal-mcp remain under the MIT Licence set out
-below and are not subject to this reservation.
+distribute, or create derivative works is granted except as separately agreed in
+writing with Smartr365.
 
-It is a TypeScript implementation whose tool, resource, and prompt interface is
-designed to be compatible with the uk-legal-mcp project, and which incorporates
-and adapts portions of that MIT-licensed project — including OSCOLA citation
-regex patterns — as acknowledged below. It was written against the Model Context
+It is an independent TypeScript implementation written against the Model Context
 Protocol TypeScript SDK (@modelcontextprotocol/sdk). It targets publicly
 available UK legal data sources (The National Archives Find Case Law,
-legislation.gov.uk, the UK Parliament APIs, and GOV.UK/HMRC); those sources and
+legislation.gov.uk, the UK Parliament APIs, GOV.UK/HMRC, Companies House, The
+Gazette, EUR-Lex/CELLAR, and the EPO Open Patent Services); those sources and
 their data are the property of their respective owners and are used under their
 own terms.
 
+The OSCOLA citation patterns in src/modules/citations/parsers.ts are compiled
+from primary sources — the neutral-citation scheme (Practice Direction (Citation
+of Authorities)) and The National Archives' Find Case Law court list for court
+codes, and OSCOLA (4th edn) for law-report series abbreviations — which are
+factual reference data.
+
+Acknowledgement: this project was inspired by uk-legal-mcp (© 2026 Paul
+Boucherat), which is MIT-licensed. uk-legal (TypeScript) is an independent
+implementation and incorporates none of that project's source code.
+
 Third-party open-source packages used at runtime (declared in package.json)
 remain under their own licences, held in each package's distribution.
-
-
-Incorporation and interface-compatibility acknowledgement
----------------------------------------------------------
-
-This project's MCP interface — the set of tool, resource, and prompt names and
-their argument shapes — is designed to be compatible with, and this project
-incorporates and adapts portions of:
-
-    uk-legal-mcp — Copyright (c) 2026 Paul Boucherat — MIT License
-
-That project is licensed under the MIT License, whose permission notice is
-reproduced below. Portions of uk-legal-mcp — including OSCOLA citation regex
-patterns — are incorporated and adapted in this work under that Licence.
-
-    Permission is hereby granted, free of charge, to any person obtaining a copy
-    of this software and associated documentation files (the "Software"), to deal
-    in the Software without restriction, including without limitation the rights
-    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-    copies of the Software, and to permit persons to whom the Software is
-    furnished to do so, subject to the following conditions:
-
-    The above copyright notice and this permission notice shall be included in all
-    copies or substantial portions of the Software.
-
-    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-    SOFTWARE.

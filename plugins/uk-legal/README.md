@@ -18,7 +18,7 @@ A **compliance-controlled** TypeScript MCP server for UK legal research — case
 
 > **Not legal advice.** Informational/preparatory use only. Verify all citations and have output reviewed by a qualified solicitor or barrister before relying on it.
 
-It is an independent TypeScript implementation built on `@modelcontextprotocol/sdk`, inspired by the MIT-licensed `uk-legal-mcp` project (© 2026 Paul Boucherat) but not derived from its source code. Proprietary — © 2026 Smartr365; see [`NOTICE`](./NOTICE).
+It is an independent TypeScript implementation built on `@modelcontextprotocol/sdk`. Proprietary — © 2026 Smartr365; see [`NOTICE`](./NOTICE).
 
 ## Surface
 

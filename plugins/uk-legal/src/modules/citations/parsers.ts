@@ -17,15 +17,24 @@ export const AMBIGUOUS_COURTS = new Set<string>(["EWHC", "UKUT", "UKFTT"]);
 
 // --- Raw pattern fragments ---
 //
-// Provenance: the NEUTRAL_COURT_PATTERN and REPORT_SERIES fragments below are
-// incorporated and adapted from uk-legal-mcp (© 2026 Paul Boucherat), used under
-// the MIT Licence (see the repository NOTICE). Their token content is the set of
-// real UK neutral-citation court codes and the OSCOLA 4th-edition law-report
-// series abbreviations; the selection/arrangement follows that project's.
+// Compiled from primary sources, not from any third-party implementation. The
+// neutral-citation court codes follow the neutral-citation scheme (Practice
+// Direction (Citation of Authorities)) and the court/tribunal list published by
+// The National Archives' Find Case Law — the same authority this module's
+// resolver targets, so the matcher and the resolver stay in step. The law-report
+// series abbreviations follow OSCOLA (4th edn). Both are factual reference data
+// (official court codes; standard report-series abbreviations); the ordering
+// here is our own — courts by hierarchy, report series by precedence.
+//
+// A neutral citation's parenthetical division (the "(KB)" in "[2024] EWHC 12
+// (KB)") is captured by the trailing group in NEUTRAL_RE, NOT inside this list,
+// because in a well-formed citation the division follows the number. Only the
+// courts that carry no post-number division inline (EWCA Civ/Crim) spell it out.
+// Codes are limited to those the resolver can map to a Find Case Law URL.
 
-const NEUTRAL_COURT_PATTERN = String.raw`EWCA\s+(?:Civ|Crim)|EWHC\s*\([A-Za-z]+\)|EWHC|EWFC\s*(?:\(Fam\))?|EWCOP|UKUT\s*\([A-Za-z]+\)|UKUT|UKFTT\s*\([A-Za-z]+\)|UKFTT|UKSC|UKPC|EAT|NICA|NIQB|CSOH|CSIH`;
+const NEUTRAL_COURT_PATTERN = String.raw`UKSC|UKPC|EWCA\s+(?:Civ|Crim)|EWHC|EWFC|EWCOP|UKUT|UKFTT|EAT|NICA|NIQB`;
 
-const REPORT_SERIES = String.raw`AC|WLR|All\s+ER(?:\s+\(Comm\))?|QB|KB|Ch|Fam|BCLC|IRLR|ICR|HLR|Lloyd's\s+Rep(?:\s+Med)?|EMLR|CMLR|ELR|Cr\s+App\s+R`;
+const REPORT_SERIES = String.raw`AC|QB|KB|Ch|Fam|WLR|All\s+ER(?:\s+\(Comm\))?|Cr\s+App\s+R|BCLC|ICR|IRLR|HLR|EMLR|CMLR|ELR|Lloyd's\s+Rep(?:\s+Med)?`;
 
 // --- Compiled patterns (compile-once module singletons) ---
 
@@ -60,9 +69,25 @@ export function compilePatterns(): Record<CitationType, RegExp> {
 
 // --- Court / series normalisation and resolution ---
 
-/** Title-case a single alphabetic run: leading character upper-cased, the rest lower-cased. */
-export function titleCase(s: string): string {
-  return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+/**
+ * Canonical OSCOLA display case for each recognised court-division qualifier.
+ * Acronym divisions (KB, IPEC, TCC, IAC, …) stay upper-cased; word divisions
+ * (Comm, Ch, Admin, …) are title-cased. Keyed by the upper-cased token.
+ */
+const DIVISION_DISPLAY: Record<string, string> = {
+  // EWHC divisions
+  KB: "KB", CH: "Ch", COMM: "Comm", FAM: "Fam", PAT: "Pat", IPEC: "IPEC",
+  ADMIN: "Admin", TCC: "TCC", COSTS: "Costs",
+  // UKUT chambers
+  IAC: "IAC", AAC: "AAC", LC: "LC",
+  // UKFTT chambers
+  TC: "TC", GRC: "GRC",
+};
+
+/** Normalise a division qualifier to its canonical OSCOLA case; an unknown token is upper-cased. */
+export function normaliseDivision(raw: string): string {
+  const key = raw.trim().toUpperCase();
+  return DIVISION_DISPLAY[key] ?? key;
 }
 
 /** True when the court code is missing a division qualifier that it needs. */
@@ -130,14 +155,19 @@ const COURT_DISPLAY: Record<string, string> = {
   "EWHC (ADMIN)": "EWHC (Admin)",
   "EWHC (TCC)": "EWHC (TCC)",
   "EWHC (COSTS)": "EWHC (Costs)",
+  EWFC: "EWFC",
+  EWCOP: "EWCOP",
   UKUT: "UKUT",
   "UKUT (IAC)": "UKUT (IAC)",
   "UKUT (TCC)": "UKUT (TCC)",
   "UKUT (AAC)": "UKUT (AAC)",
   "UKUT (LC)": "UKUT (LC)",
   EAT: "EAT",
+  UKFTT: "UKFTT",
   "UKFTT (TC)": "UKFTT (TC)",
   "UKFTT (GRC)": "UKFTT (GRC)",
+  NICA: "NICA",
+  NIQB: "NIQB",
 };
 
 export function buildOscola(
@@ -157,6 +187,11 @@ export function buildOscola(
   if (citationType === "neutral") {
     const key = court || "";
     const display = COURT_DISPLAY[key] ?? key;
+    // For the EWHC/UKUT/UKFTT families the division is parenthetical and, in
+    // OSCOLA, follows the number: "[2024] EWHC 123 (KB)". EWCA Civ/Crim and the
+    // divisionless courts carry no parenthetical and format as "[year] court num".
+    const divisioned = display.match(/^(.*?)\s*\(([^)]+)\)$/);
+    if (divisioned) return `[${year}] ${divisioned[1]} ${num} (${divisioned[2]})`;
     return `[${year}] ${display} ${num}`;
   }
   if (citationType === "law_report") {
@@ -218,16 +253,18 @@ export function parseCitationFromMatch(m: RegExpMatchArray, ctype: CitationType)
 
   if (ctype === "neutral") {
     const year = parseInt(m[1]!, 10);
-    let courtRaw = m[2]!.trim().replace(/\s+/g, " ").toUpperCase();
+    let court = m[2]!.trim().replace(/\s+/g, " ").toUpperCase();
     const num = parseInt(m[3]!, 10);
     const trailingDivision = m[4];
-    let confidence = 1.0;
-    if (trailingDivision && AMBIGUOUS_COURTS.has(courtRaw)) {
-      courtRaw = `${courtRaw} (${titleCase(trailingDivision)})`;
+    if (trailingDivision && AMBIGUOUS_COURTS.has(court)) {
+      court = `${court} (${normaliseDivision(trailingDivision)})`;
     }
-    if (courtIsAmbiguous(courtRaw)) confidence = 0.5;
-    const resolved = resolveNeutralCitation(year, courtRaw, num);
-    return makeCitation({ raw, type: ctype, year, court: courtRaw, number: num, resolved_url: resolved, confidence });
+    // A neutral citation is confident only when it resolves to a specific court.
+    // A bare EWHC/UKUT/UKFTT (no division) and any unrecognised court+division
+    // do not resolve, so they surface as ambiguous rather than falsely confident.
+    const resolved = resolveNeutralCitation(year, court, num);
+    const confidence = resolved ? 1.0 : 0.5;
+    return makeCitation({ raw, type: ctype, year, court, number: num, resolved_url: resolved, confidence });
   }
 
   if (ctype === "law_report") {

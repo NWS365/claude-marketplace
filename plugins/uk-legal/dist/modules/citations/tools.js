@@ -13,7 +13,7 @@ import { assertOk } from "../../shared/http.js";
 import { errorResult, jsonResult, toolErrorFromException } from "../../shared/envelope.js";
 import { READ_ONLY_CLOSED, READ_ONLY_OPEN, withTitle } from "../../shared/annotations.js";
 import { TTL } from "../../shared/cache.js";
-import { AMBIGUOUS_COURTS, buildOscola, compilePatterns, extractAllCitations, resolveNeutralCitation, titleCase, TNA_BASE, } from "./parsers.js";
+import { AMBIGUOUS_COURTS, buildOscola, compilePatterns, extractAllCitations, normaliseDivision, resolveNeutralCitation, TNA_BASE, } from "./parsers.js";
 /** Quote a scalar for the `attempted` error breadcrumb. */
 function quoteArg(v) {
     if (v === undefined || v === null)
@@ -69,7 +69,7 @@ async function disambiguateCitation(deps, citation) {
             return citation;
         if (division === "UNKNOWN")
             return citation;
-        const newCourt = `${citation.court} (${titleCase(division)})`;
+        const newCourt = `${citation.court} (${normaliseDivision(division)})`;
         const newUrl = citation.year && citation.number
             ? resolveNeutralCitation(citation.year, newCourt, citation.number)
             : null;
