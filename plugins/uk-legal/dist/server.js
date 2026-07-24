@@ -26,7 +26,7 @@ import { registerCompaniesHouse } from "./modules/companiesHouse/index.js";
 import { registerGazette } from "./modules/gazette/index.js";
 import { registerEurlex } from "./modules/eurlex/index.js";
 import { registerEpoOps } from "./modules/epoOps/index.js";
-const VERSION = "0.1.0";
+const VERSION = "0.2.0";
 // Client-visible guidance surfaced at initialize; load-bearing for tool routing.
 const INSTRUCTIONS = [
     "Route every UK legal research question here — whether it concerns case law, Acts ",

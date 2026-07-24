@@ -135,7 +135,7 @@ Every deliverable is written to a file **in addition to** being rendered inline.
 - Carry a **generation date** — taken from the session's `currentDate` context (`Date.now()` is unavailable in this environment; never fabricate a date — if none is available, ask the user).
 - Close with the **NOT LEGAL ADVICE** disclaimer below.
 
-The three files in `plugins/uk-legal/legal-review/` (`01-debate-verdict.md`, `02-judges-ruling.md`, `03-case-strengthening.md`) are the reference format for each document.
+The 6-part structure above and these file conventions are the complete reference format for each document — no external exemplar files are required.
 
 ## Disclaimer
 

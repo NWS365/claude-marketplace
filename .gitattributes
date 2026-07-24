@@ -1,0 +1,11 @@
+# Normalise line endings to LF in the repo and working tree so committed dist/*
+# does not churn between LF and CRLF across platforms (notably tsc output on
+# Windows). Prevents spurious "modified" noise on rebuild.
+* text=auto eol=lf
+
+# Binary types that must never be normalised.
+*.png binary
+*.jpg binary
+*.gif binary
+*.pdf binary
+*.ico binary

@@ -1,7 +1,7 @@
 ---
 name: Legal Debate
 description: This skill should be used when the user asks to "debate this legal question", "evaluate legal strategies", "argue both sides", "compare legal positions", "what's the strongest argument", "moot this", "stress test this argument", "assess litigation risk", "which clause approach is safer", "appeal this outcome", "how do I win this position", or needs multiple perspectives on a legal problem. Also use it when the user supplies evidence to work through before arguing — "digest these documents", "extract the key facts from this bundle", "prepare this evidence for a debate" — which triggers an evidence pre-processing step first. Spawns a dynamic team of agents that argue competing legal positions, then debate to find the strongest approach, with optional appeal and case-strengthening stages.
-version: 0.4.0
+version: 0.5.0
 ---
 
 # Legal Debate Skill
@@ -57,7 +57,7 @@ Each deliverable is written to a file under `legal-review/` (in the current work
 | `03-case-strengthening.md` | Only if the Phase 7 package is produced | The partisan winning package |
 | `04-appeal-ruling.md` | Only if an appeal is run (Phase 6) | The appellate determination and disposition |
 
-Every one of these files opens with an italic provenance line — `*<description> (legal-debate skill, Phase N). Generated <currentDate>. Jurisdiction: <jurisdiction>.*` — and closes with the NOT LEGAL ADVICE disclaimer. The three files in `plugins/uk-legal/legal-review/` are the reference format for each document. Keep `01-debate-verdict.md` crisp, per the "keep the total output concise" rule.
+Every one of these files opens with an italic provenance line — `*<description> (legal-debate skill, Phase N). Generated <currentDate>. Jurisdiction: <jurisdiction>.*` — and closes with the NOT LEGAL ADVICE disclaimer. `references/output-format.md` gives the complete reference format for each document. Keep `01-debate-verdict.md` crisp, per the "keep the total output concise" rule.
 
 ## Authority & verification (uk-legal MCP)
 

@@ -1,0 +1,9 @@
+# Local review / runtime artifacts — not part of any plugin.
+# `legal-review/` is written by the legal-debate skill into the *user's* working
+# directory at runtime; it must never be committed to the marketplace.
+legal-review/
+.claude/reviews/
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db

@@ -139,5 +139,5 @@ rendering it inline. The file opens with a provenance line —
 `*Partisan preparation (legal-debate skill, Phase 7). Generated <currentDate>. Jurisdiction: <jurisdiction>.*`
 — then a lead line naming the position advanced, the six package sections, and the
 **NOT LEGAL ADVICE** disclaimer. Take the date from the session's `currentDate`
-context — never fabricate one. See `plugins/uk-legal/legal-review/03-case-strengthening.md`
-for the reference format.
+context — never fabricate one. Follow the file conventions in
+`references/output-format.md`.

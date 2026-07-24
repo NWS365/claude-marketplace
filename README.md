@@ -5,7 +5,7 @@
 **A Claude Code plugin marketplace for UK legal reasoning & research.**
 
 [![Build](https://img.shields.io/badge/build-passing-brightgreen?style=flat-square&logo=typescript&logoColor=white)](#quality)
-[![Tests](https://img.shields.io/badge/tests-426%20passing-brightgreen?style=flat-square&logo=vitest&logoColor=white)](#quality)
+[![Tests](https://img.shields.io/badge/tests-433%20passing-brightgreen?style=flat-square&logo=vitest&logoColor=white)](#quality)
 [![Coverage](https://img.shields.io/badge/coverage-99%25%20lines-brightgreen?style=flat-square)](#quality)
 [![License](https://img.shields.io/badge/license-Proprietary-red?style=flat-square)](#disclaimer)
 [![Plugins](https://img.shields.io/badge/plugins-3-blueviolet?style=flat-square)](#plugins)
@@ -57,7 +57,7 @@ the marketplace's substantive code. From `plugins/uk-legal`:
 
 ```bash
 npm run build          # tsc → dist/  (committed for zero-friction install)
-npm test               # vitest — 426 tests, upstreams stubbed (no network)
+npm test               # vitest — 433 tests, upstreams stubbed (no network)
 npm run test:coverage  # ~99% lines · ~99% functions · ~90% branches (gated)
 npm run verify         # parity + smoke: 41 tools / 9 resources / 4 prompts
 ```

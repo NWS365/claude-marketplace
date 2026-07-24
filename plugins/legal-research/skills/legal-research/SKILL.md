@@ -1,7 +1,7 @@
 ---
 name: Legal Research
-description: This skill should be used when the user needs to research or verify UK law — find case law, read legislation (with territorial extent and in-force status), search Hansard/Parliament, bills, divisions, committee evidence, parse or verify OSCOLA citations, or check HMRC guidance. It directs which uk-legal MCP tool to call for which question and enforces a citation-verification protocol that prevents fabricated authorities.
-version: 0.1.0
+description: This skill should be used when the user needs to research or verify UK law — "find case law", "what does section X say", "read this Act", "check territorial extent / is this in force", "search Hansard", "check this citation", "is this case real", "verify this authority", "format an OSCOLA citation", or "check HMRC guidance / VAT rate". It directs which uk-legal MCP tool to call for which question and enforces a citation-verification protocol that prevents fabricated authorities.
+version: 0.2.0
 ---
 
 # Legal Research Skill

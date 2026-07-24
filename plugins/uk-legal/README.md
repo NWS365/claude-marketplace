@@ -5,7 +5,7 @@
 **A compliance-controlled TypeScript MCP server for UK legal research.**
 
 [![Build](https://img.shields.io/badge/build-passing-brightgreen?style=flat-square&logo=typescript&logoColor=white)](#develop)
-[![Tests](https://img.shields.io/badge/tests-426%20passing-brightgreen?style=flat-square&logo=vitest&logoColor=white)](#tests)
+[![Tests](https://img.shields.io/badge/tests-433%20passing-brightgreen?style=flat-square&logo=vitest&logoColor=white)](#tests)
 [![Coverage](https://img.shields.io/badge/coverage-99%25%20lines-brightgreen?style=flat-square)](#tests)
 [![MCP SDK](https://img.shields.io/badge/MCP%20SDK-1.29-8A2BE2?style=flat-square&logo=anthropic&logoColor=white)](https://github.com/modelcontextprotocol)
 [![License](https://img.shields.io/badge/license-Proprietary-red?style=flat-square)](#disclaimer)

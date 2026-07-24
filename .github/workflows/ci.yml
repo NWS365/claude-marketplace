@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  uk-legal:
+    name: uk-legal MCP (build · test · coverage · verify)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: plugins/uk-legal
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: plugins/uk-legal/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      # The committed dist/ must match a fresh build — dist is shipped for
+      # zero-friction install, so it must never drift from src.
+      - name: dist is in sync with src
+        run: git diff --exit-code -- dist
+
+      - name: Test + coverage gate
+        run: npm run test:coverage
+
+      - name: Interface parity + smoke
+        run: npm run verify

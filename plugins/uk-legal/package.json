@@ -1,6 +1,6 @@
 {
   "name": "uk-legal-ts",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "UK legal research MCP server (TypeScript) — case law, legislation, Parliament/Hansard, bills, votes, committees, OSCOLA citations, HMRC, Companies House, The Gazette, EUR-Lex, EPO patents. Compliance-controlled; returns primary sources with citation metadata.",
   "type": "module",
   "private": true,
@@ -20,6 +20,7 @@
     "dev": "tsx src/server.ts",
     "typecheck": "tsc --noEmit",
     "verify": "node scripts/verify-parity.mjs",
+    "smoke:live": "node scripts/smoke-live.mjs",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage"
   },
