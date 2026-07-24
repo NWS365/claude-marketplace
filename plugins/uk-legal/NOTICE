@@ -1,36 +1,41 @@
 uk-legal (TypeScript)
 =====================
 
-Copyright © 2026 Smartr365. All rights reserved.
+Copyright © 2026 Smartr365. All rights reserved in Smartr365's own original
+code and content.
 
 This software is PROPRIETARY and CONFIDENTIAL. No licence to use, copy, modify,
-distribute, or create derivative works is granted except as separately agreed
-in writing with Smartr365.
+distribute, or create derivative works in Smartr365's own contributions is
+granted except as separately agreed in writing with Smartr365. Portions
+incorporated or adapted from uk-legal-mcp remain under the MIT Licence set out
+below and are not subject to this reservation.
 
-It is an independent TypeScript implementation whose tool, resource, and prompt
-interface is designed to be compatible with the uk-legal-mcp project. It was
-written against the Model Context Protocol TypeScript SDK
-(@modelcontextprotocol/sdk) and is not derived from uk-legal-mcp's source code.
-It targets publicly available UK legal data sources (The National Archives Find
-Case Law, legislation.gov.uk, the UK Parliament APIs, and GOV.UK/HMRC); those
-sources and their data are the property of their respective owners and are used
-under their own terms.
+It is a TypeScript implementation whose tool, resource, and prompt interface is
+designed to be compatible with the uk-legal-mcp project, and which incorporates
+and adapts portions of that MIT-licensed project — including OSCOLA citation
+regex patterns — as acknowledged below. It was written against the Model Context
+Protocol TypeScript SDK (@modelcontextprotocol/sdk). It targets publicly
+available UK legal data sources (The National Archives Find Case Law,
+legislation.gov.uk, the UK Parliament APIs, and GOV.UK/HMRC); those sources and
+their data are the property of their respective owners and are used under their
+own terms.
 
 Third-party open-source packages used at runtime (declared in package.json)
 remain under their own licences, held in each package's distribution.
 
 
-Interface-compatibility acknowledgement
-----------------------------------------
+Incorporation and interface-compatibility acknowledgement
+---------------------------------------------------------
 
 This project's MCP interface — the set of tool, resource, and prompt names and
-their argument shapes — is designed to be compatible with:
+their argument shapes — is designed to be compatible with, and this project
+incorporates and adapts portions of:
 
     uk-legal-mcp — Copyright (c) 2026 Paul Boucherat — MIT License
 
 That project is licensed under the MIT License, whose permission notice is
-reproduced below in acknowledgement of the interface compatibility. No
-uk-legal-mcp source code is incorporated into this work.
+reproduced below. Portions of uk-legal-mcp — including OSCOLA citation regex
+patterns — are incorporated and adapted in this work under that Licence.
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal

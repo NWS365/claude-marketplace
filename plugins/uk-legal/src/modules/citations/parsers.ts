@@ -16,6 +16,12 @@ export const LEGISLATION_BASE = "https://www.legislation.gov.uk";
 export const AMBIGUOUS_COURTS = new Set<string>(["EWHC", "UKUT", "UKFTT"]);
 
 // --- Raw pattern fragments ---
+//
+// Provenance: the NEUTRAL_COURT_PATTERN and REPORT_SERIES fragments below are
+// incorporated and adapted from uk-legal-mcp (© 2026 Paul Boucherat), used under
+// the MIT Licence (see the repository NOTICE). Their token content is the set of
+// real UK neutral-citation court codes and the OSCOLA 4th-edition law-report
+// series abbreviations; the selection/arrangement follows that project's.
 
 const NEUTRAL_COURT_PATTERN = String.raw`EWCA\s+(?:Civ|Crim)|EWHC\s*\([A-Za-z]+\)|EWHC|EWFC\s*(?:\(Fam\))?|EWCOP|UKUT\s*\([A-Za-z]+\)|UKUT|UKFTT\s*\([A-Za-z]+\)|UKFTT|UKSC|UKPC|EAT|NICA|NIQB|CSOH|CSIH`;
 
