@@ -32,7 +32,7 @@ export const AMBIGUOUS_COURTS = new Set<string>(["EWHC", "UKUT", "UKFTT"]);
 // courts that carry no post-number division inline (EWCA Civ/Crim) spell it out.
 // Codes are limited to those the resolver can map to a Find Case Law URL.
 
-const NEUTRAL_COURT_PATTERN = String.raw`UKSC|UKPC|EWCA\s+(?:Civ|Crim)|EWHC|EWFC|EWCOP|UKUT|UKFTT|EAT|NICA|NIQB`;
+const NEUTRAL_COURT_PATTERN = String.raw`UKSC|UKPC|EWCA\s+(?:Civ|Crim)|EWHC|EWFC|EWCOP|UKUT|UKFTT|EAT`;
 
 const REPORT_SERIES = String.raw`AC|QB|KB|Ch|Fam|WLR|All\s+ER(?:\s+\(Comm\))?|Cr\s+App\s+R|BCLC|ICR|IRLR|HLR|EMLR|CMLR|ELR|Lloyd's\s+Rep(?:\s+Med)?`;
 
@@ -119,8 +119,8 @@ const TNA_COURT_SLUGS: Record<string, string> = {
   EAT: "eat",
   "UKFTT (TC)": "ukftt/tc",
   "UKFTT (GRC)": "ukftt/grc",
-  NICA: "nica",
-  NIQB: "niqb",
+  // Note: Scottish and Northern Irish courts are deliberately absent — TNA Find
+  // Case Law does not host them, so a slug here would resolve to a URL that 404s.
 };
 
 /** Build the TNA Find Case Law URL that corresponds to a neutral citation. */
@@ -166,8 +166,6 @@ const COURT_DISPLAY: Record<string, string> = {
   UKFTT: "UKFTT",
   "UKFTT (TC)": "UKFTT (TC)",
   "UKFTT (GRC)": "UKFTT (GRC)",
-  NICA: "NICA",
-  NIQB: "NIQB",
 };
 
 export function buildOscola(

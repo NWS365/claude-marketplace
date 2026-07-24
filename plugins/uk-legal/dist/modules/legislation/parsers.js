@@ -198,7 +198,34 @@ export function parseSearchAtom(xmlText) {
                 : {},
         });
     }
-    return { results, total: total || results.length };
+    return { results, total: total || results.length, coverage_note: null };
+}
+/**
+ * A coverage caveat for devolved legislation, or null for UK-wide types
+ * (ukpga/uksi). This server can retrieve devolved *statute* from
+ * legislation.gov.uk, but not the devolved *case law* or legislature
+ * proceedings that interpret it — so any output touching devolved legislation
+ * says so. Keyed on the legislation type code, not on territorial extent (a UK
+ * Act can extend to Scotland without being Scottish Parliament legislation).
+ */
+export function jurisdictionCaveat(type) {
+    const t = type.trim().toLowerCase();
+    if (t === "asp" || t === "ssi") {
+        return ("Scottish legislation. Scots law is a distinct legal system: this server can retrieve Scottish statute " +
+            "but NOT Scottish case law (the Court of Session, High Court of Justiciary and Sheriff Courts are not on " +
+            "Find Case Law) or Scottish Parliament (Holyrood) proceedings, so how the Scottish courts have interpreted " +
+            "this provision cannot be verified here. Check version_date for currency — revised/in-force data for devolved " +
+            "legislation can lag — and confirm with a Scottish-qualified practitioner.");
+    }
+    if (t === "nia") {
+        return ("Northern Ireland legislation. NI is a distinct jurisdiction; verify separately how the NI courts have " +
+            "applied this provision, and check version_date for currency.");
+    }
+    if (t === "asc" || t === "anaw" || t === "mwa" || t === "wsi") {
+        return ("Welsh legislation. Confirm how it applies in Wales and check version_date; devolved revised/in-force " +
+            "data can lag.");
+    }
+    return null;
 }
 // --- section (CLML XML) ---
 function extentCodesToNames(codeString) {

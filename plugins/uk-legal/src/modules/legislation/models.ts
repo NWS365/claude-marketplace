@@ -21,6 +21,8 @@ export interface LegislationResult {
 export interface LegislationSearchResult {
   results: LegislationResult[];
   total: number;
+  /** A coverage caveat when any result is devolved legislation (Scotland/NI/Wales); null otherwise. */
+  coverage_note: string | null;
 }
 
 /** A page of an Act's or Statutory Instrument's table of contents. */
@@ -34,6 +36,8 @@ export interface LegislationTOC {
   total_items: number;
   has_more: boolean;
   items: string[];
+  /** A coverage caveat for devolved legislation (Scotland/NI/Wales); null for UK-wide types. */
+  coverage_note: string | null;
 }
 
 /** One section of an Act or SI, together with its metadata. */

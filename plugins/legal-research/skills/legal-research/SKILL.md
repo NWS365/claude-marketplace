@@ -27,6 +27,7 @@ At the start, read `~/.claude/uk-legal-profile.md` if it exists. Apply its `defa
 - **ALWAYS** check `extent` and `in_force`/`version_date` on a legislation section before relying on it — a provision may be repealed, prospective, or apply differently across England, Wales, Scotland, and Northern Ireland.
 - **ALWAYS** separate a verified exact match from nearby candidates; say which was confirmed.
 - **ALWAYS** carry the source URL / citation metadata into the answer so the user can check it.
+- **ALWAYS** surface any `coverage_note` (from `legislation_search` / `legislation_get_toc`) or devolved caveat in a section's `warnings` (from `legislation_get_section`), and warn the human accordingly. This server retrieves devolved **statute** (Scottish `asp`/`ssi`, Welsh `asc`/`anaw`, NI `nia`) but has **no source for devolved case law or legislature proceedings** — so never imply Scottish/NI/Welsh judicial interpretation has been checked.
 
 ## Which tool? (decision tree)
 
@@ -44,6 +45,17 @@ At the start, read `~/.claude/uk-legal-profile.md` if it exists. Apply its `defa
 - **"Committee scrutiny / evidence"** → `committees_search_committees` → `committees_get_committee` → `committees_search_evidence`.
 - **"A citation in this text / is this citation real"** → `citations_parse` (extract all) → `citations_resolve` (verify each) → `citations_format_oscola` (format). See protocol below.
 - **"VAT rate / HMRC guidance / MTD status"** → `hmrc_get_vat_rate`, `hmrc_search_guidance`, `hmrc_check_mtd_status` (needs configured HMRC OAuth; returns `auth_required` otherwise).
+
+## Jurisdiction coverage — devolved & Scots law (warn the human)
+
+This server's coverage is **not uniform across the UK**. Be explicit with the user about what it can and cannot verify:
+
+- **Scotland.** `legislation_*` can retrieve Scottish **statute** — Acts of the Scottish Parliament (`asp`) and Scottish SIs (`ssi`). But there is **no source for Scottish case law** (the Court of Session, High Court of Justiciary, and Sheriff Courts are not on Find Case Law) or **Holyrood proceedings**. So a Scots-law question can be answered on statute only; how the Scottish courts have applied a provision **cannot be verified here**. Do **not** run Scottish case citations through `citations_*` — they will not resolve. Scots law is a **distinct legal system**: tell the user that judicial interpretation must come from a Scottish source (SCTS / BAILII) or a Scottish-qualified practitioner.
+- **Northern Ireland.** Statute is retrievable (`nia`), but **NI case law is not on Find Case Law** (it hosts England & Wales only), so NICA/NIQB neutral citations will **not** resolve — do not run them through `citations_*`, and do not filter `case_law_search` by an NI court. Point the user to BAILII or the NI Courts & Tribunals Service for NI judgments.
+- **Wales.** For **case law**, Wales is part of the single England & Wales jurisdiction — Welsh cases are decided in the E&W courts (EWCA/EWHC), which are fully covered. Only Welsh **statute** (`asc`/`anaw`) is distinct, and it carries the devolved caveat.
+- **England & Wales.** Full coverage — case law, legislation, Hansard, and the rest.
+
+When a legislation tool returns a `coverage_note` or a devolved `warnings` entry, **repeat it to the user**; do not bury it.
 
 ## Citation-verification protocol (mandatory, anti-fabrication)
 

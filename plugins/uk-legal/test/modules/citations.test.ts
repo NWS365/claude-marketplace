@@ -113,10 +113,14 @@ describe("citations/parsers", () => {
     expect(ambiguous.some((c) => c.court === "EWHC")).toBe(true);
   });
 
-  it("does not match Scottish Court of Session codes (no Find Case Law resolver)", () => {
-    // CSOH/CSIH were dropped from the pattern: they cannot resolve against TNA,
-    // so recognising them would only yield confident-looking, unresolvable hits.
-    const [confident, ambiguous] = extractAllCitations("[2024] CSOH 12 and [2024] CSIH 3", compilePatterns());
+  it("does not match Scottish or Northern Irish court codes (not on Find Case Law)", () => {
+    // TNA Find Case Law hosts England & Wales only. Scottish (CSOH/CSIH) and NI
+    // (NICA/NIQB) codes are dropped from the pattern: recognising them would only
+    // yield confident-looking hits that resolve to URLs which 404.
+    const [confident, ambiguous] = extractAllCitations(
+      "[2024] CSOH 12; [2024] CSIH 3; [2024] NICA 5; [2024] NIQB 7",
+      compilePatterns(),
+    );
     expect(confident).toHaveLength(0);
     expect(ambiguous).toHaveLength(0);
   });

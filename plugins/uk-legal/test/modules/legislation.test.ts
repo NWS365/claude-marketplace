@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { registerLegislation } from "../../src/modules/legislation/index.js";
 import {
-  reprStr, normaliseSectionId, parseSearchAtom, parseClmlSection, parseHtmlSection, parseTocXml, LEGISLATION_BASE,
+  reprStr, normaliseSectionId, parseSearchAtom, parseClmlSection, parseHtmlSection, parseTocXml, jurisdictionCaveat, LEGISLATION_BASE,
 } from "../../src/modules/legislation/parsers.js";
 import { registerModule, callTool, resultJson, isErr, resourceByTemplate, fetched } from "../_harness.js";
 import { LegislationUpstreamError } from "../../src/shared/envelope.js";
@@ -21,10 +21,25 @@ const ATOM = `<feed xmlns="http://www.w3.org/2005/Atom" xmlns:os="http://a9.com/
   <entry><title>Weird</title><id>http://example.com/nonsense</id></entry>
 </feed>`;
 
+describe("legislation/parsers — jurisdictionCaveat", () => {
+  it("flags Scottish, NI, and Welsh legislation and is null for UK-wide types", () => {
+    expect(jurisdictionCaveat("asp")).toMatch(/Scottish/);
+    expect(jurisdictionCaveat("ssi")).toMatch(/Scottish/);
+    expect(jurisdictionCaveat("asp")).toMatch(/cannot retrieve Scottish case law|NOT Scottish case law/);
+    expect(jurisdictionCaveat("nia")).toMatch(/Northern Ireland/);
+    expect(jurisdictionCaveat("asc")).toMatch(/Welsh/);
+    expect(jurisdictionCaveat("anaw")).toMatch(/Welsh/);
+    expect(jurisdictionCaveat("ukpga")).toBeNull();
+    expect(jurisdictionCaveat("uksi")).toBeNull();
+    expect(jurisdictionCaveat(" ASP ")).toMatch(/Scottish/); // trimmed + case-insensitive
+  });
+});
+
 describe("legislation/parsers — parseSearchAtom", () => {
   it("parses plain, xhtml, regnal, and unknown entries", () => {
     const out = parseSearchAtom(ATOM);
     expect(out.total).toBe(4);
+    expect(out.coverage_note).toBeNull(); // the parser leaves the note to the tool handler
     expect(out.results[0]).toMatchObject({ title: "Housing Act 1988", type: "ukpga", year: 1988, number: 50 });
     expect(out.results[0]!.next_steps.toc).toContain("legislation://ukpga/1988/50/toc");
     expect(out.results[1]!.title).toBe("Welsh Act 2020"); // xhtml en span
@@ -185,6 +200,20 @@ describe("legislation_search", () => {
     expect(url).toContain("results-count=20");
   });
 
+  it("sets a coverage_note when the result set contains devolved legislation", async () => {
+    // ATOM includes an asp entry (asp/2020/3), so the handler flags the set.
+    const reg = registerModule(registerLegislation, { legislationGet: vi.fn(async () => xml(ATOM)) });
+    const out = resultJson(await callTool(reg, "legislation_search", { query: "housing" }));
+    expect(out.coverage_note).toMatch(/devolved legislation/);
+  });
+
+  it("leaves coverage_note null when every result is UK-wide", async () => {
+    const ukOnly = `<feed xmlns="http://www.w3.org/2005/Atom"><entry><title>Housing Act 1988</title><id>http://www.legislation.gov.uk/id/ukpga/1988/50</id></entry></feed>`;
+    const reg = registerModule(registerLegislation, { legislationGet: vi.fn(async () => xml(ukOnly)) });
+    const out = resultJson(await callTool(reg, "legislation_search", { query: "housing" }));
+    expect(out.coverage_note).toBeNull();
+  });
+
   it("uses the /search path and text param when fulltext=true", async () => {
     const legislationGet = vi.fn(async () => xml(ATOM));
     const reg = registerModule(registerLegislation, { legislationGet });
@@ -210,6 +239,27 @@ describe("legislation_get_section", () => {
     expect(out.title).toBe("Records");
     expect(out.section_number).toBe("47"); // normalised
     expect(legislationGet.mock.calls[0]![0]).toContain("/ukpga/2006/46/section/47/data.xml");
+    expect(out.warnings.some((w: string) => /Scottish/.test(w))).toBe(false); // ukpga -> no devolved caveat
+  });
+
+  it("appends a Scottish coverage caveat to warnings for asp legislation", async () => {
+    const legislationGet = vi.fn(async () => xml(SECTION_XML));
+    const reg = registerModule(registerLegislation, { legislationGet });
+    const out = resultJson(await callTool(reg, "legislation_get_section", { type: "asp", year: 2010, number: 8, section: "47" }));
+    expect(out.title).toBe("Records"); // still parses the provision
+    expect(out.warnings.some((w: string) => /Scottish legislation/.test(w))).toBe(true);
+    expect(out.warnings.some((w: string) => /cannot retrieve Scottish case law|NOT Scottish case law/.test(w))).toBe(true);
+    expect(legislationGet.mock.calls[0]![0]).toContain("/asp/2010/8/section/47/data.xml");
+  });
+
+  it("appends the devolved caveat on the HTML fallback path too", async () => {
+    const legislationGet = vi.fn(async () => { throw new LegislationUpstreamError("waf blocked"); });
+    const legislationGetHtml = vi.fn(async () => html(`<html><body><div id="content"><h1>T</h1><p>b</p></div></body></html>`));
+    const reg = registerModule(registerLegislation, { legislationGet, legislationGetHtml });
+    const out = resultJson(await callTool(reg, "legislation_get_section", { type: "ssi", year: 2015, number: 1, section: "1" }));
+    expect(out.source_format).toBe("html_fallback");
+    expect(out.warnings[0]).toBe("waf blocked");
+    expect(out.warnings.some((w: string) => /Scottish legislation/.test(w))).toBe(true);
   });
 
   it("falls back to the HTML parser on a LegislationUpstreamError", async () => {
@@ -251,6 +301,13 @@ describe("legislation_get_toc", () => {
     expect(out.returned).toBe(1);
     expect(out.items[0]).toContain("section-2");
     expect(out.has_more).toBe(true); // 1 + 1 < 3
+    expect(out.coverage_note).toBeNull(); // ukpga -> no caveat
+  });
+
+  it("sets coverage_note for devolved (asp) legislation", async () => {
+    const reg = registerModule(registerLegislation, { legislationGet: vi.fn(async () => xml(TOC_XML)) });
+    const out = resultJson(await callTool(reg, "legislation_get_toc", { type: "asp", year: 2010, number: 8 }));
+    expect(out.coverage_note).toMatch(/Scottish legislation/);
   });
 
   it("surfaces an upstream error", async () => {

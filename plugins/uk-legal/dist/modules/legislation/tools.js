@@ -11,7 +11,7 @@ import { jsonResult, toolErrorFromException, LegislationUpstreamError } from "..
 import { assertOk } from "../../shared/http.js";
 import { withTitle, READ_ONLY_OPEN } from "../../shared/annotations.js";
 import { TTL } from "../../shared/cache.js";
-import { LEGISLATION_BASE, normaliseSectionId, parseSearchAtom, parseClmlSection, parseHtmlSection, parseTocXml, reprStr, } from "./parsers.js";
+import { LEGISLATION_BASE, jurisdictionCaveat, normaliseSectionId, parseSearchAtom, parseClmlSection, parseHtmlSection, parseTocXml, reprStr, } from "./parsers.js";
 const SEARCH_DESC = `Finds UK Acts and Statutory Instruments — by title, by phrase, or across their full text.
 
 Results are ranked and each carries a title, type, year, number, the
@@ -26,7 +26,11 @@ Act"), search the phrase alone and read the year off the results. Set
 \`fulltext=True\` to range across the body of legislation rather than titles.
 
 This is the authoritative feed for UK primary and secondary legislation
-(legislation.gov.uk).`;
+(legislation.gov.uk), including devolved legislation — Scottish (asp/ssi), Welsh
+(asc/anaw), and Northern Ireland (nia). When results include devolved
+legislation the response carries a coverage_note: this server can retrieve
+devolved statute but not the devolved case law that interprets it (see
+legislation_get_section).`;
 const GET_SECTION_DESC = `Returns the parsed wording of one section of an identified Act or SI, with its extent and in-force metadata.
 
 The response gives the full section text, its territorial extent, whether it is
@@ -37,6 +41,12 @@ check content_truncated to see whether anything was cut.
 Always read \`extent\`. A provision can be live in England & Wales yet not apply
 in Scotland or Northern Ireland, and quoting a section without checking its
 extent is a recurring error in legal research.
+
+For devolved legislation (Scottish asp/ssi, Welsh asc/anaw, NI nia) the response
+appends a coverage caveat to \`warnings\`: the statute is retrievable, but this
+server cannot retrieve the devolved case law or legislature proceedings that
+interpret it — surface that caveat to the user and do not imply Scottish/NI/Welsh
+judicial interpretation has been checked.
 
 For the raw CLML XML instead, call
 read_resource(uri="legislation://{type}/{year}/{number}/section/{section}").
@@ -68,7 +78,7 @@ export function registerTools(server, deps) {
             type: z
                 .string()
                 .optional()
-                .describe("Restrict to one type: 'ukpga' (Acts), 'uksi' (SIs), 'asp' (Scottish Acts), 'nia' (NI Acts). This matches exactly, so leave it off when you are not yet sure whether you want an Act or an SI."),
+                .describe("Restrict to one type: 'ukpga' (UK Acts), 'uksi' (UK SIs), 'asp' (Scottish Parliament Acts), 'ssi' (Scottish SIs), 'nia' (NI Acts), 'asc'/'anaw' (Welsh Acts). This matches exactly, so leave it off when you are not yet sure whether you want an Act or an SI."),
             year: z
                 .number()
                 .int()
@@ -100,7 +110,16 @@ export function registerTools(server, deps) {
                 params.set("year", String(year));
             const url = `${LEGISLATION_BASE}${path}?${params.toString()}`;
             const f = assertOk(await deps.legislationGet(url, { cacheTtl: TTL.DAY }));
-            return jsonResult(parseSearchAtom(f.text));
+            const parsed = parseSearchAtom(f.text);
+            // Flag the result set when it contains devolved legislation, so a caller
+            // scanning titles is warned before drilling into a Scottish/NI/Welsh Act.
+            if (parsed.results.some((r) => jurisdictionCaveat(r.type) !== null)) {
+                parsed.coverage_note =
+                    "Some results are devolved legislation (Scotland, Northern Ireland, or Wales). Devolved statute is " +
+                        "retrievable here, but this server cannot retrieve the devolved case law or legislature proceedings " +
+                        "that interpret it — legislation_get_section returns the jurisdiction-specific caveat for a given Act.";
+            }
+            return jsonResult(parsed);
         }
         catch (err) {
             return toolErrorFromException(err, `legislation_search(query=${reprStr(query)})`);
@@ -114,7 +133,7 @@ export function registerTools(server, deps) {
                 .string()
                 .min(2)
                 .max(10)
-                .describe("The type code for the legislation: 'ukpga' (Acts), 'uksi' (SIs), 'asp' (Scottish Acts), 'nia' (NI Acts). Take this straight from a legislation_search result."),
+                .describe("The type code for the legislation: 'ukpga' (UK Acts), 'uksi' (UK SIs), 'asp' (Scottish Parliament Acts), 'ssi' (Scottish SIs), 'nia' (NI Acts), 'asc'/'anaw' (Welsh Acts). Take this straight from a legislation_search result. Devolved types return a coverage caveat (see below)."),
             year: z.number().int().gte(1800).lte(2100).describe("The year it was enacted"),
             number: z.number().int().gte(1).describe("The chapter number (Acts) or SI number"),
             section: z
@@ -136,16 +155,23 @@ export function registerTools(server, deps) {
         const section = normaliseSectionId(args.section);
         const url = `${LEGISLATION_BASE}/${type}/${year}/${number}/section/${section}/data.xml`;
         const attempted = `legislation_get_section(type=${reprStr(type)}, year=${year}, number=${number}, section=${reprStr(section)})`;
+        const caveat = jurisdictionCaveat(type);
         try {
             const f = assertOk(await deps.legislationGet(url, { cacheTtl: TTL.DAY }));
-            return jsonResult(parseClmlSection(f.text, section, max_chars));
+            const parsed = parseClmlSection(f.text, section, max_chars);
+            if (caveat)
+                parsed.warnings.push(caveat);
+            return jsonResult(parsed);
         }
         catch (err) {
             if (err instanceof LegislationUpstreamError) {
                 try {
                     const htmlUrl = `${LEGISLATION_BASE}/${type}/${year}/${number}/section/${section}`;
                     const htmlResp = assertOk(await deps.legislationGetHtml(htmlUrl, { cacheTtl: TTL.DAY }));
-                    return jsonResult(parseHtmlSection(htmlResp.text, section, max_chars, err.message));
+                    const parsed = parseHtmlSection(htmlResp.text, section, max_chars, err.message);
+                    if (caveat)
+                        parsed.warnings.push(caveat);
+                    return jsonResult(parsed);
                 }
                 catch (innerErr) {
                     return toolErrorFromException(innerErr, attempted);
@@ -162,7 +188,7 @@ export function registerTools(server, deps) {
                 .string()
                 .min(2)
                 .max(10)
-                .describe("The type code for the legislation: 'ukpga' (Acts), 'uksi' (SIs), 'asp' (Scottish Acts), 'nia' (NI Acts). Take this straight from a legislation_search result."),
+                .describe("The type code for the legislation: 'ukpga' (UK Acts), 'uksi' (UK SIs), 'asp' (Scottish Parliament Acts), 'ssi' (Scottish SIs), 'nia' (NI Acts), 'asc'/'anaw' (Welsh Acts). Take this straight from a legislation_search result. Devolved types return a coverage caveat (see below)."),
             year: z.number().int().gte(1800).lte(2100).describe("The year it was enacted"),
             number: z.number().int().gte(1).describe("The chapter number (Acts) or SI number"),
             offset: z
@@ -199,6 +225,7 @@ export function registerTools(server, deps) {
                 total_items: totalItems,
                 has_more: offset + page.length < totalItems,
                 items: page,
+                coverage_note: jurisdictionCaveat(type),
             };
             return jsonResult(toc);
         }

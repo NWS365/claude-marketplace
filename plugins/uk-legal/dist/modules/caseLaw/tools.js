@@ -48,7 +48,7 @@ or fragile links, so do not lean on it as a supplement.`,
             court: z
                 .string()
                 .optional()
-                .describe("Restrict to one court, given as its slug. Accepted values: 'uksc', 'ukpc', 'ewca/civ', 'ewca/crim', 'ewhc/kb', 'ewhc/ch', 'ewhc/comm', 'ewhc/fam', 'ewhc/pat', 'ewhc/ipec', 'ewhc/admin', 'ewhc/tcc', 'ewhc/costs', 'ewfc', 'ewcop', 'eat', 'ukut/iac', 'ukut/aac', 'ukut/tcc', 'ukut/lc', 'ukftt/tc', 'ukftt/grc', 'nica', 'niqb'."),
+                .describe("Restrict to one court, given as its slug. Accepted values: 'uksc', 'ukpc', 'ewca/civ', 'ewca/crim', 'ewhc/kb', 'ewhc/ch', 'ewhc/comm', 'ewhc/fam', 'ewhc/pat', 'ewhc/ipec', 'ewhc/admin', 'ewhc/tcc', 'ewhc/costs', 'ewfc', 'ewcop', 'eat', 'ukut/iac', 'ukut/aac', 'ukut/tcc', 'ukut/lc', 'ukftt/tc', 'ukftt/grc'. Find Case Law covers England & Wales only — it does not host Scottish, Northern Irish, or Irish courts."),
             judge: z
                 .string()
                 .optional()

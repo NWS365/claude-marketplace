@@ -17,7 +17,7 @@ export const AMBIGUOUS_COURTS = new Set(["EWHC", "UKUT", "UKFTT"]);
 // because in a well-formed citation the division follows the number. Only the
 // courts that carry no post-number division inline (EWCA Civ/Crim) spell it out.
 // Codes are limited to those the resolver can map to a Find Case Law URL.
-const NEUTRAL_COURT_PATTERN = String.raw `UKSC|UKPC|EWCA\s+(?:Civ|Crim)|EWHC|EWFC|EWCOP|UKUT|UKFTT|EAT|NICA|NIQB`;
+const NEUTRAL_COURT_PATTERN = String.raw `UKSC|UKPC|EWCA\s+(?:Civ|Crim)|EWHC|EWFC|EWCOP|UKUT|UKFTT|EAT`;
 const REPORT_SERIES = String.raw `AC|QB|KB|Ch|Fam|WLR|All\s+ER(?:\s+\(Comm\))?|Cr\s+App\s+R|BCLC|ICR|IRLR|HLR|EMLR|CMLR|ELR|Lloyd's\s+Rep(?:\s+Med)?`;
 // --- Compiled patterns (compile-once module singletons) ---
 const NEUTRAL_RE = new RegExp(String.raw `\[(\d{4})\]\s+(` + NEUTRAL_COURT_PATTERN + String.raw `)\s+(\d+)(?:\s*\(([A-Za-z]+)\))?`, "gi");
@@ -83,8 +83,8 @@ const TNA_COURT_SLUGS = {
     EAT: "eat",
     "UKFTT (TC)": "ukftt/tc",
     "UKFTT (GRC)": "ukftt/grc",
-    NICA: "nica",
-    NIQB: "niqb",
+    // Note: Scottish and Northern Irish courts are deliberately absent — TNA Find
+    // Case Law does not host them, so a slug here would resolve to a URL that 404s.
 };
 /** Build the TNA Find Case Law URL that corresponds to a neutral citation. */
 export function resolveNeutralCitation(year, court, num) {
@@ -125,8 +125,6 @@ const COURT_DISPLAY = {
     UKFTT: "UKFTT",
     "UKFTT (TC)": "UKFTT (TC)",
     "UKFTT (GRC)": "UKFTT (GRC)",
-    NICA: "NICA",
-    NIQB: "NIQB",
 };
 export function buildOscola(citationType, year, court, num, reportSeries, volume, page, legislationTitle, section, siYear, siNumber, raw) {
     if (citationType === "neutral") {
